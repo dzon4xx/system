@@ -1,8 +1,8 @@
 from sys_database.database import create_db_object
 
-from server_client.server.models.room import Room
-from server_client.server.models.group import Group
-from server_client.server.models.visual_element import *
+from server__client.server.models.room import Room
+from server__client.server.models.group import Group
+from server__client.server.models.visual_element import *
 
 from common.sys_types import rt, et
 

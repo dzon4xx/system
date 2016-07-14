@@ -1,6 +1,6 @@
 import logging
 from tornado.websocket import  WebSocketHandler
-from server_client.server.models.visual_element import Visual_element
+from server__client.server.models.visual_element import Visual_element
 
 socket_logger = logging.getLogger('WS')
 socket_logger.disabled = False

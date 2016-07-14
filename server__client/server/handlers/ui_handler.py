@@ -1,5 +1,5 @@
 import tornado.web
-from server_client.server.models.room import Room
+from server__client.server.models.room import Room
 
 rooms = Room.items
 paths = (r'/ui/ui.html', r'/ui/sidebar_left.html', r'/ui/sidebar_right.html', r'/ui/system?')

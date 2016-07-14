@@ -1,7 +1,6 @@
 from common.sys_types import et, gt
 from common.base_object import Base_object
 
-from server_client.server.models.html_functions import tag
 from dominate.tags import div, br, b, ul, li, span
 class Group(Base_object):
     """Grupa agregujaca elementy wizualne"""
