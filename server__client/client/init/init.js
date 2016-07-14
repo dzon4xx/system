@@ -1,4 +1,5 @@
 ﻿///<reference path="https://code.jquery.com/jquery-2.2.4.js"/>
+///<reference path="../lib/md5.js"/>
 
 
 function getCookie(cname) {
@@ -69,7 +70,8 @@ class Auth {
 
     submit_login() {
         var user_name = $("#name").val();
-        var pwd = $("#pwd").val()
+        var pwd = md5($("#pwd").val());
+
         var data = JSON.stringify({
             action: 'login',
             name: user_name,
