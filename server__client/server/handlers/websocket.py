@@ -24,14 +24,13 @@ class Websocket(WebSocketHandler):
 
 
     def on_message(self, message):
-        socket_logger.debug(self.name, 'send: ', message)
+        socket_logger.debug('%s send: %s',self.name, message)
         if self == Websocket.logic:
             data = message.split(',')
             Visual_element.items[int(data[0][1:])].value = data[1]
             for con in Websocket.clients:
                 con.write_message(message)
         else:
-            socket_logger.debug(message)
             Websocket.logic.write_message(message)
 
     def on_close(self):

@@ -1,4 +1,4 @@
-from common.sys_types import et, gt
+from common.sys_types import et, gt, regt
 from common.base_object import Base_object
 
 from dominate.tags import div, br, b, ul, li, span
@@ -15,7 +15,9 @@ class Group(Base_object):
                        et.pir : gt.inputs,
                        et.rs : gt.inputs,
                        et.switch: gt.inputs,
-                       et.ventilator : gt.ventilation}
+                       et.ventilator : gt.ventilation,
+                       regt.hum: gt.ventilation,
+                       regt.temp: gt.heating,}
 
     sensors = ( et.dht_hum, et.dht_temp, et.ds, et.ls)
 

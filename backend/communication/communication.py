@@ -8,6 +8,8 @@ class Communication():
 
     def __init__(self, ):
         self.logger = logging.getLogger('COM')
+        self.logger.disabled = False
+        self.logger.setLevel("DEBUG")
         self.in_buffer = []
         self.out_buffer = []
         

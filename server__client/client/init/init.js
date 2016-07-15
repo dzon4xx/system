@@ -91,6 +91,15 @@ class Auth {
 
 }
 
+function send_value(event) {
+    var id = event.currentTarget.id;
+    console.log(document.getElementById(id).value);
+    val = document.getElementById(id).value;
+    id = id.slice(5);
+    console.log(id);
+    ws.send(id + ',' + val);
+}
+
 function system_init() {
     $('.navbar-toggle').click(function () {
         $('.navbar-nav').toggleClass('slide-in');
@@ -100,6 +109,19 @@ function system_init() {
         $('.navbar-nav').toggleClass('slide-in');
         $('.side-body').toggleClass('body-slide-in');
     });
+    $("input").on('change', send_value)
+    ws = new WebSocket("ws://" + location.host + "/websocket");
+
+    ws.onmessage = function (evt) {
+        console.log(evt.data);
+        var data = evt.data.split(',');
+        var id = data[0];
+        var value = data[1];
+        var element = document.getElementById(id);
+        element.innerText = value;
+    }
+
+
 }
 
 $(document).ready(function () {
