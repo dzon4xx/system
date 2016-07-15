@@ -152,6 +152,16 @@ class Database:
         if not object_data:
             return False
         return Object(*object_data)
+
+    @read_remove
+    def read_simple(self, table_name, key_name, key):
+        """Reads object based on given key from database"""
+        sql_command = self._put_spaces(self.sql_SELECT, "*", self.sql_FROM, table_name, self.sql_WHERE, key_name, '=', '?')
+        self.cur.execute(sql_command, (key,))
+        object_data = list(self.cur.fetchone())
+        if not object_data:
+            return False
+        return object_data
     
     @save_create
     #def update_user_log_status(self, user):
