@@ -1,0 +1,15 @@
+﻿.text-center{
+    text-align: center
+}
+
+.blind{
+    width :145px
+}
+
+
+.btn-default:focus,
+.btn-default.focus {
+  color: #333;
+  background-color: #fff;
+  border-color: #8c8c8c;
+}
