@@ -4,10 +4,11 @@ import tornado.web
 from dominate.tags import div, br, h3
 
 class Room(Base_object):
-    """Defines room in system"""
+    """Defines room display in system"""
     table_name = 'rooms'
     column_headers_and_types = Base_object.column_headers_and_types + [['els', 'text'], ['regs', 'text']]
     
+    COL_REGS = 4
     COL_ELS = 3                                     
     ID = 0
     items = {}
@@ -26,6 +27,7 @@ class Room(Base_object):
             self.elements.append(element)
 
     def get_display_data(self,):
+        """Returns data organized in bootstrap rows and columns. There are Room.groups_per_row columns per row"""
         rows = []
         row = []
         for group_num, group in enumerate(self.groups.values()):
@@ -39,11 +41,11 @@ class Room(Base_object):
         return rows
 
     def get_html(self, ):
-
+        """Generates room html"""
         rows = self.get_display_data()
 
         room_container = div(cls = "well", id='room' + str(self.id))
-        room_name = h3(self.name, style="text-align: center")
+        room_name = h3(self.name, cls="text-center")
         room_container.add(room_name)
         for row in rows:            
             r = div(cls='row')

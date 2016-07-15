@@ -1,6 +1,6 @@
 import sys
 
-from server_client.server.models.user import User
+from server__client.server.models.user import User
 from common.elements.element import Element
 from common.elements.input_element import Input_element
 from common.elements.output_element import Blind, Output_element
@@ -8,7 +8,7 @@ from common.modules.input_module import Input_module, Ambient_module
 from common.modules.output_module import Output_module 
 from common.modules.module import Module, Add_element_error
 
-from server_client.server.models.room import Room
+from server__client.server.models.room import Room
 
 from common.relations.dependancy import Dependancy, Dependancy_config_error
 from common.relations.regulation import Regulation, Regulation_config_error
@@ -108,9 +108,9 @@ class System_creator():
 
         try:
             if type == et.dht:
-                el1= Input_element(self.element_id, et.dht_hum, name)
+                el1= Input_element(self.element_id, et.dht_hum, 'Humidity')
                 self.element_id += 1
-                el2 = Input_element(self.element_id, et.dht_temp, name)
+                el2 = Input_element(self.element_id, et.dht_temp, 'Temperature')
                 self.element_id += 1
                 Module.items[module_id].add_element(port, el1)
                 Module.items[module_id].add_element(port, el2)
@@ -264,14 +264,14 @@ system.add_element(type = et.led,
                     module_id = 2,
                     port =   0)#2
 system.add_element(type = et.pir, 
-                    name = 'Motion sensor',
+                    name = 'Motion',
                     room_id = 0,
                     module_id = 0,
                     port =   0)#3
 
 # id 1
 system.add_element(type = et.ds, 
-                    name = 'Temperature sensor',
+                    name = 'Temperature',
                     room_id = 1,
                     module_id = 3,
                     port =   1)#4
@@ -286,19 +286,19 @@ system.add_element(type = et.blind,
                     module_id = [1, 1],
                     port =   [1, 2])#6
 system.add_element(type = et.pir, 
-                    name = 'Motion sensor',
+                    name = 'Motion',
                     room_id = 1,
                     module_id = 0,
                     port =   1)#7
 system.add_element(type = et.rs, 
-                    name = 'Reed switch window',
+                    name = 'RS window',
                     room_id = 1,
                     module_id = 0,
                     port =   2)#8
 
 # id 2
 system.add_element(type = et.ds, 
-                    name = 'Temperature sensor',
+                    name = 'Temperature',
                     room_id = 2,
                     module_id = 3,
                     port =   1)#9
@@ -315,19 +315,19 @@ system.add_element(type = et.led,
 
 # id 3
 system.add_element(type = et.ds, 
-                    name = 'Temperature sensor',
+                    name = 'Temperature',
                     room_id = 3,
                     module_id = 3,
                     port =   1)#12
 system.add_element(type = et.pir, 
-                    name = 'Motion sensor',
+                    name = 'Motion',
                     room_id = 3,
                     module_id = 0,
                     port =   3)#13
 
 # id 4
 system.add_element(type = et.ds, 
-                    name = 'Temperature sensor',
+                    name = 'Temperature',
                     room_id = 4,
                     module_id = 3,
                     port =   1)#14
@@ -348,19 +348,19 @@ system.add_element(type = et.blind,
                     port =   [5, 6])#17
 
 system.add_element(type = et.pir, 
-                    name = 'Motion sensor',
+                    name = 'Motion',
                     room_id = 4,
                     module_id = 0,
                     port =   4)#18
 system.add_element(type = et.rs, 
-                    name = 'Window',
+                    name = 'RS window',
                     room_id = 4,
                     module_id = 0,
                     port =   5)#19
 
 # id 5
 system.add_element(type = et.ds, 
-                    name = 'Temperature sensor',
+                    name = 'Temperature',
                     room_id = 5,
                     module_id = 3,
                     port =   1)#20
@@ -376,36 +376,36 @@ system.add_element(type = et.blind,
                     port =   [8, 9])#22
 
 system.add_element(type = et.pir, 
-                    name = 'Motion sensor',
+                    name = 'Motion',
                     room_id = 5,
                     module_id = 0,
                     port =   6)#23
 system.add_element(type = et.rs, 
-                    name = 'Window',
+                    name = 'RS Window',
                     room_id = 5,
                     module_id = 0,
                     port =   7)#24
 
 #id 6
 system.add_element(type = et.ds, 
-                    name = 'Temperature sensor',
+                    name = 'Temperature',
                     room_id = 6,
                     module_id = 3,
                     port =   1)#25
 system.add_element(type = et.ls, 
-                    name = 'Light Sensor',
+                    name = 'Light level',
                     room_id = 6,
                     module_id = 3,
                     port =   2)#26
 system.add_element(type = et.rs, 
-                    name = 'Main doors',
+                    name = 'RS Main doors',
                     room_id = 6,
                     module_id = 0,
                     port =   8)#27
 
 system.add_dependancy('wlaczanie swiatla w lazience', '[e3=1] then e2=100; e2=0{100};')
 system.add_dependancy('Zaleznosc 2', '[d=mon,tue,wed,thu,fri] and [t=5:50] then e2=20{0}; e2=0{200}; e5=1{0}')
-system.add_regulation('temperatura w pokoju dzonego', feed_el_id=0, out_el_id=10, set_point=20, dev=2)
+system.add_regulation('Temp set', feed_el_id=0, out_el_id=10, set_point=20, dev=2)
 print("\n")
 system.save()
 

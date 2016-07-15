@@ -27,11 +27,10 @@ class Group(Base_object):
 
     def get_html(self, ):
 
-        gr_name = div(b(self.type.name.title()), cls="panel-heading", style="text-align: center")
+        gr_name = div(b(self.type.name.title()), cls="panel-heading text-center")
         
         group = div(cls="panel panel-info")
 
-        #group = div(cls="well", style="background-color:azure;")
         group_body = div(cls="panel-body")
         for element in self.elements:
             group_body.add(element.get_html())

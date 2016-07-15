@@ -1,6 +1,6 @@
 from common.base_object import Base_object
 from common.sys_types import et
-from dominate.tags import div, button, h4, span, b
+from dominate.tags import div, button, h4, span, b, p
 
 
 class Visual_element(Base_object):
@@ -29,20 +29,21 @@ class Visual_element(Base_object):
 
 
     def get_blind(self, ):
+        
+        btn_name = p(b(self.name), cls="text-center")
 
-        btn_up = button('up', cls='btn btn-primary')#tag('button', atr="""class="btn btn-primary\"""", inner ="up")
-        btn_up['ng-click'] = self.send_function(100)
-        btn_down = button('down', cls='btn btn-primary')
-        btn_down['ng-click'] = self.send_function(0)
-        btn_group = div(cls="btn-group")
-        btn_group.add(btn_up, btn_down)
-        return b(self.name), btn_group
+        btn_up = button('up', cls='btn-lg btn-default')
+        btn_up['onclick'] = self.send_function(100)
+        btn_down = button('down', cls='btn-lg btn-default')
+        btn_down['onclick'] = self.send_function(0)
+        btn_group = div(btn_name, btn_up, btn_down, cls="blind")
+        return btn_group
 
 
     def send_function(self, val):
         val = ','.join([str(self.id), str(val)])
         val = "\"" + val + "\""
-        fun = 'ui.ws.send' + self._brackets(val)
+        fun = 'ws.send' + self._brackets(val)
         return fun
     def _brackets(self, str):
         return '(' + str + ')'
