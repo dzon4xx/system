@@ -3,9 +3,11 @@ from common.sys_types import mt
 
 class Input_module(Module):
     table_name = 'input_modules'
-     
+
+    items = {}
     def __init__(self, *args):
         super().__init__(*args)
+        Input_module.items[self.id] =  self
 
         self.read_freq = None
 

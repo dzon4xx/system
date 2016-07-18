@@ -179,7 +179,7 @@ class Modbus():
 
         self.port = port
         self.bauderate = bauderate
-        self.serial =  serial.Serial(port=port, baudrate=bauderate, timeout=0.2, parity=serial.PARITY_NONE)
+        self.serial =  serial.Serial(port=port, baudrate=bauderate, timeout=0.1, parity=serial.PARITY_NONE)
 
         self.read_regs_obj = Read_regs_function()
         self.write_regs_obj = Write_regs_function()
@@ -213,7 +213,7 @@ class Modbus():
         try:
             self._validate_response(slave_address, response, self.read_regs_obj)
         except ValueError as e:
-            print (e)
+            self.logger.debug(e)
             return False
         else:
             payload = _byte_string_to_list(response[self.read_regs_obj.payload_position : -Modbus.NUMBER_OF_CRC_BYTES])

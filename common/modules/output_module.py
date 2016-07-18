@@ -4,8 +4,10 @@ from common.sys_types import mt
 class Output_module(Module):
     table_name = 'output_modules'
 
+    items = {}
     def __init__(self, *args):
         super().__init__(*args)
+        Output_module.items[self.id] =  self
 
     def write(self, port, value):
         if self.type == mt.output:

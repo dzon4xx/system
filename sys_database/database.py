@@ -120,7 +120,7 @@ class Database:
         table = self.get_table(Object)
         for data in table:
             data = list(data)
-            Object(data)
+            Object(*data)
 
     @read_remove
     def remove_table(self, Object):

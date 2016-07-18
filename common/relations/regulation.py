@@ -40,7 +40,7 @@ class Regulation(Base_object):
 
         self.feed_val = None
 
-    def __check_arguments(self, out_el_id, feed_el_id, set_point, dev):
+    def __check_arguments(self, feed_el_id, out_el_id,  set_point, dev):
         """Sprawdza czy argumenty wejsciowe do regulatora maja sens. jesli nie to wywoluje Regulation_config_error"""
         if out_el_id not in Output_element.items.keys():
             raise Regulation_config_error('Output element: ' + str(out_el_id) + " not in defined output elements")

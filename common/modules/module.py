@@ -26,22 +26,27 @@ class Module(Base_object):
     num_of_regs_ambient = 19
 
     ID = 0
-    items = {}
 
+    items = {}
     def __init__(self, *args):
         super().__init__(args[0], mt(args[1]), args[2])
         Module.items[self.id] = self 
         self.num_of_ports = Module.num_of_ports[self.type]
         self.ports = {}
         self.modbus = None
+        self.tran_num = 0
+        self.courupted_trans_num = 0
 
     def check_port_range(self, port):
         if port>self.num_of_ports-1 or port<0:
             raise Add_element_error('Port: ' + str(port) + ' out of range')
 
     def check_port_usage(self, port):
-        if self.ports[port] != None:
+        try:
+            self.ports[port]
             raise Add_element_error('Port: ' + str(port) + ' is in use')
+        except KeyError:
+            pass
 
     def check_element_type(self, element):
         if element.type not in Module.accepted_elements[self.type]:

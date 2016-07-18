@@ -5,10 +5,8 @@ class Element(Base_object):
 
     table_name = "elements"
     COL_MODULE_ID, COL_REG,  = 3, 4, #numery kolumn
-    column_headers_and_types = Element.column_headers_and_types + [['module_id', 'integer'], ['register', 'integer']] 
-                                
+    column_headers_and_types = Base_object.column_headers_and_types + [['module_id', 'integer'], ['register', 'integer']] 
 
-    column_headers_and_types = Base_object.column_headers_and_types
     ID = 0
     items = {}
 

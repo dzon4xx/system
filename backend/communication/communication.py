@@ -2,8 +2,8 @@ import websocket
 import threading
 import logging
 import os
-
-class Communication(threading.Thread):
+import time
+class Communication_manager(threading.Thread):
     
     url = "ws://localhost:8888/websocket"
 
@@ -13,23 +13,26 @@ class Communication(threading.Thread):
         self.in_buffer = []
         self.out_buffer = []
         
-        self.conn = websocket.create_connection(Communication.url, header = {'name' :'logic'})
+
+        #self.conn = websocket.create_connection(Communication_manager.url, header = {'name' :'logic'})
+
 
 
     def run(self, ):
         self.logger.info("Start")
         try:
             while True:
-                msg = self.conn.recv()
-                self.logger.debug(msg)
-                if msg is not None:
-                    self.out_buffer.append(msg)
+                time.sleep(0.01)
+                #msg = self.conn.recv()
+                #self.logger.debug(msg)
+                #if msg is not None:
+                #    self.out_buffer.append(msg)
 
-                if self.in_buffer:
-                    for msg in self.in_buffer:
-                        self.conn.send(msg)
+                #if self.in_buffer:
+                #    for msg in self.in_buffer:
+                #        self.conn.send(msg)
 
-                    self.in_buffer = []
+                #    self.in_buffer = []
         except websocket.WebSocketConnectionClosedException:
             self.logger.error("Websocet disconnected")
             os._exit(1)

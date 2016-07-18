@@ -22,6 +22,7 @@ class System_creator():
     
     def __init__(self):
         self.db = create_db_object()
+        self.db.logger.disabled = False
         self.logger = logging.getLogger('CONF')
         self.room_id    = 0
         self.element_id = 0
@@ -65,9 +66,9 @@ class System_creator():
 
         try:
             if type == et.dht:
-                el1= Input_element(self.element_id, et.dht_hum, 'Humidity')
+                el1= Input_element(self.element_id, et.dht_hum, 'Humidity', module_id, port)
                 self.element_id += 1
-                el2 = Input_element(self.element_id, et.dht_temp, 'Temperature')
+                el2 = Input_element(self.element_id, et.dht_temp, 'Temperature', module_id, port)
                 self.element_id += 1
                 Module.items[module_id].add_element(port, el1)
                 Module.items[module_id].add_element(port, el2)
@@ -83,7 +84,7 @@ class System_creator():
                 Module.items[module_id[1]].add_element(port[1], el)
 
             elif type in Input_element.types:
-                el = Input_element(self.element_id, type, name)
+                el = Input_element(self.element_id, type, name, module_id, port)
                 self.element_id += 1
                 Room.items[room_id].add_element(el)
                 Module.items[module_id].add_element(port, el)
@@ -124,7 +125,7 @@ class System_creator():
         if name == '':
             name = 'regulation ' + str(Regulation.ID)
         try:
-            Regulation(self.regulation_id, reg_type, name, out_el_id, feed_el_id, set_point, dev)
+            Regulation(self.regulation_id, reg_type, name, feed_el_id, out_el_id, set_point, dev)
 
             for room in Room.items.values(): # przypisz regulacje do pokoju w ktorym znajduje sie odpowiadajacy jej el wyjsciowy
                 for el in room.elements:
@@ -161,11 +162,11 @@ class System_creator():
 
     def __save_elements(self, ):
         for element in Element.items.values():
-            self.db.save(Element, (element.id, element.type.value, element.name))
+            #self.db.save(Element, (element.id, element.type.value, element.name))
             if element.type in Input_element.types:
-                self.db.save(Input_element, (element.id, element.type.value, element.name))
+                self.db.save(Input_element, (element.id, element.type.value, element.name, element.module_id, element.reg_id))
             elif element.type in Output_element.types:
-                self.db.save(Output_element, (element.id, element.type.value, element.name, element.module_id, element.port))
+                self.db.save(Output_element, (element.id, element.type.value, element.name, element.module_id, element.reg_id))
 
     def __save_dependancies(self, ):
         for dep in Dependancy.items.values():

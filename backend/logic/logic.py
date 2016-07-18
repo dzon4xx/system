@@ -1,6 +1,6 @@
 import logging
 import threading
-
+import time
 
 from common.elements.element import Element
 from common.elements.input_element import Input_element
@@ -10,17 +10,14 @@ from common.elements.clock import clock
 from common.relations.dependancy import Dependancy
 from common.relations.regulation import Regulation
 
-from common.color_logs import color_logs
-
 from sys_database.database import Database, create_db_object
 
 from common.sys_types import mt, et, regt, task_stat
 
 from backend.logic.task import Task
-from backend.communication.communication import Communication
 
 
-class Logic(threading.Thread):
+class Logic_manager(threading.Thread):
 
     def __init__(self, group=None, target=None, name=None, args=(), kwargs=None, verbose=None):
         threading.Thread.__init__(self, group=None, target=None, name='LOGIC')
@@ -34,21 +31,11 @@ class Logic(threading.Thread):
         self.__setup()
 
     def __setup(self, ):
-        self.__create_elements()
-        self.__create_dependancies()
-        self.__create_regulations()
-
-    def __create_elements(self, ):
         self.__db.load_objects_from_table(Input_element)
         self.__db.load_objects_from_table(Output_element)
-
-    def __create_dependancies(self,):
         self.__db.load_objects_from_table(Dependancy)
-
-
-    def __create_regulations(self,):
         self.__db.load_objects_from_table(Regulation)
-
+   
     def __process_msg(self, msg):
         msg = msg.split(',')
         type = msg[0][0]
@@ -99,6 +86,7 @@ class Logic(threading.Thread):
     def run(self, ):
         self.logger.info("Start")
         while True:
+            time.sleep(0.01)
             self.__clean_done_tasks()
             self.__check_com_buffer()
             self.__check_elements_values_and_notify()

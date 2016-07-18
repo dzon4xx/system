@@ -3,10 +3,8 @@ from common.sys_types import et
 from math import floor
 
 class Output_element(Element):
-
     table_name = 'output_elements'
-
-   
+  
     types = [et.led, et.heater, et.ventilator, et.blind]
     items = {}
 
@@ -33,7 +31,7 @@ class Output_element(Element):
         pass
 
     def __str__(self, ):
-        return  "".join([super().__str__(), "\tdesired_value: ", str(self.desired_value), "\tmodule id: ", str(self.module_id), "\tport id: ", str(self.port)])
+        return  "".join([super().__str__(), "\tdesired_value: ", str(self.desired_value), "\tmodule id: ", str(self.module_id), "\tport id: ", str(self.reg_id)])
 
 
 class Blind(Output_element):
@@ -42,8 +40,8 @@ class Blind(Output_element):
         
         self.module_id_up = floor(self.module_id/16)
         self.module_id_down = self.module_id%16
-        self.port_up    = floor(self.port/16)
-        self.port_down  = self.port%16
+        self.reg_up    = floor(self.reg_id/16)
+        self.reg_down  = self.reg_id%16
 if __name__ == "__main__":
     pass
 
