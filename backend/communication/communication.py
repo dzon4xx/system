@@ -1,15 +1,15 @@
 import websocket
 import threading
 import logging
+import os
 
-class Communication():
+class Communication(threading.Thread):
     
     url = "ws://localhost:8888/websocket"
 
-    def __init__(self, ):
+    def __init__(self, group=None, target=None, name=None, args=(), kwargs=None, verbose=None):
+        threading.Thread.__init__(self, group=group, target=target, name='COM')
         self.logger = logging.getLogger('COM')
-        self.logger.disabled = False
-        self.logger.setLevel("DEBUG")
         self.in_buffer = []
         self.out_buffer = []
         
@@ -17,23 +17,25 @@ class Communication():
 
 
     def run(self, ):
-        
-        while True:
-            msg = self.conn.recv()
-            print(msg)
-            if msg is not None:
-                self.out_buffer.append(msg)
+        self.logger.info("Start")
+        try:
+            while True:
+                msg = self.conn.recv()
+                self.logger.debug(msg)
+                if msg is not None:
+                    self.out_buffer.append(msg)
 
-            if self.in_buffer:
-                for msg in self.in_buffer:
-                    self.conn.send(msg)
+                if self.in_buffer:
+                    for msg in self.in_buffer:
+                        self.conn.send(msg)
 
-                self.in_buffer = []
+                    self.in_buffer = []
+        except websocket.WebSocketConnectionClosedException:
+            self.logger.error("Websocet disconnected")
+            os._exit(1)
 
 
 
-if __name__ == "__main__":
 
-    com = Communication()
-    com.run()
+
     
