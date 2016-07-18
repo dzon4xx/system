@@ -31,7 +31,7 @@ class Group(Base_object):
 
         gr_name = div(b(self.type.name.title()), cls="panel-heading text-center")
         
-        group = div(cls="panel panel-info")
+        group = div(cls="panel panel-primary")
 
         group_body = div(cls="panel-body")
         for element in self.elements:

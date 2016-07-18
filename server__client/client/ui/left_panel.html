@@ -12,16 +12,19 @@
             </button>
 
             <!-- Brand -->
-            <div class="brand-name-wrapper">
-                <a class="navbar-brand" href="#">
-                    Anfa system
-                </a>
-            </div>
+
         </div>
     </div>
 
     <!-- Main Menu -->
     <div class="side-menu-container">
+
+        <div class="brand-name-wrapper">
+            <a class="navbar-brand" href="#">
+                <b>Anfa system</b>
+            </a>
+        </div>
+
         <ul class="nav navbar-nav">
             {% for room in rooms.values()%}
             <li class="room-anchor"><a href="#room{{room.id}}">{{room.name}}</a></li>

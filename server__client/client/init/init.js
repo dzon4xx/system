@@ -93,10 +93,9 @@ class Auth {
 
 function send_value(event) {
     var id = event.currentTarget.id;
-    console.log(document.getElementById(id).value);
     val = document.getElementById(id).value;
     id = id.slice(5);
-    console.log(id);
+    console.log(id, val);
     ws.send(id + ',' + val);
 }
 

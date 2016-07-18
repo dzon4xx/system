@@ -34,10 +34,12 @@
   width: 300px;
   height: 100%;
   background-color: #f8f8f8;
-  border-right: 1px solid #e7e7e7;
+
 }
 .side-menu .navbar {
-  border: none;
+
+      border : solid 1px #337ab7;
+border-radius: 4px;
 }
 .side-menu .navbar-header {
   width: 100%;

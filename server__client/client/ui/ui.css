@@ -1,4 +1,16 @@
-﻿.text-center{
+﻿
+
+body {
+    background-image: url("http://wallpaperswa.com/thumbnails/detail/20120806/patterns%20textures%20backgrounds%20gradient%201440x900%20wallpaper_wallpaperswa.com_32.jpg");
+}
+.side-menu{
+background-color: rgba(0, 0, 0, 0);
+
+}
+
+
+
+.text-center{
     text-align: center;
     
 }
