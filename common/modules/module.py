@@ -2,7 +2,6 @@ from common.base_object import Base_object
 from enum import Enum
 from common.sys_types import mt, et
 
-
 class Add_element_error(Exception):
     def __init__(self, msg):
         self.msg = msg
@@ -19,22 +18,22 @@ class Module(Base_object):
 
     output_modules = [mt.led_light, mt.output]
   
-    ports_map = {mt.input: 15,
+    num_of_ports = {mt.input: 15,
                  mt.ambient: 4,
                  mt.led_light: 3,
                  mt.output : 10}
+
+    num_of_regs_ambient = 19
 
     ID = 0
     items = {}
 
     def __init__(self, *args):
-        super().__init__(*args)
+        super().__init__(args[0], mt(args[1]), args[2])
         Module.items[self.id] = self 
-        self.num_of_ports = Module.ports_map[self.type]
-        self.ports = self.__create_ports()
-
-    def __create_ports(self, ):
-        return [None for port_num in range(self.num_of_ports)]
+        self.num_of_ports = Module.num_of_ports[self.type]
+        self.ports = {}
+        self.modbus = None
 
     def check_port_range(self, port):
         if port>self.num_of_ports-1 or port<0:

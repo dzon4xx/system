@@ -1,49 +1,32 @@
-from common.modules.module import Module,  Add_element_error
-from common.sys_types import et
+from common.modules.module import Module
+from common.sys_types import mt
 
 class Input_module(Module):
     table_name = 'input_modules'
-    column_headers_and_types = Module.column_headers_and_types + [['input_elements', 'text']]
      
-
     def __init__(self, *args):
         super().__init__(*args)
-        self.in_elements = []
 
-class Ambient_module(Input_module):
+        self.read_freq = None
 
-    number_of_regs = 19
+    def read(self,):
 
-    DS_ID = 0
+        if self.type == mt.ambient:
+            regs = self.modbus.read_regs(self.id, 0, Module.num_of_regs_ambient)
 
-    def __init__(self, *args):
-        super().__init__(*args)
-        self.regs = self.__create_regs()
+        elif self.type == mt.input:
+            regs = self.modbus.read_regs(self.id, 0, Module.num_of_ports[mt.input])
 
-    def add_element(self, port, element):
-        self.check_element_type(element)
-        self.check_port_range(port)
-        self.check_if_element_connected(element)
-        if self.ports[port]:    #jesli cos juz jest na porcie
-            if self.ports[port].type == et.ds:  # jesli w na tym porcie juz jest ds 
-                if element.type == et.ds:
+        if regs:    # if there is response from module
+            for reg_num, reg in enumerate(regs): 
+                try:
+                    self.ports[reg_num].value = reg
+                except KeyError:
                     pass
-                else:
-                    raise Add_element_error('Port: ' + port + ' in use')
-            
-        self.ports[port] = element
+            return True
+        else:
+            #TODO notification about module failures
+            return False
 
-        if element.type == et.ls:
-            self.regs[0] = element
-        elif element.type == et.dht_hum:
-            self.regs[1] = element
-        elif element.type == et.dht_hum:
-            self.regs[2] = element
-        elif element.type == et.ds:
-            self.regs[3 + Ambient_module.DS_ID] = element
-            Ambient_module.DS_ID += 1
+        
 
-        element.module_id = self.id
-
-    def __create_regs(self):
-        return [None for num in range(self.number_of_regs)]

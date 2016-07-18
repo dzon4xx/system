@@ -4,6 +4,10 @@ from common.sys_types import et
 class Element(Base_object):
 
     table_name = "elements"
+    COL_MODULE_ID, COL_REG,  = 3, 4, #numery kolumn
+    column_headers_and_types = Element.column_headers_and_types + [['module_id', 'integer'], ['register', 'integer']] 
+                                
+
     column_headers_and_types = Base_object.column_headers_and_types
     ID = 0
     items = {}
@@ -12,7 +16,8 @@ class Element(Base_object):
         super().__init__(args[0], et(args[1]), args[2]) # inicjalizuj id type, name
         Element.items[self.id] = self        
         self.value = None
-        self.module_id = None
+        self.module_id = args[Element.COL_MODULE_ID]
+        self.reg_id = args[Element.COL_REG]
         self.objects_to_notify = []   
         self.new_val_flag = False
 

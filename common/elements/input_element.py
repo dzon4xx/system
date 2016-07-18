@@ -11,7 +11,8 @@ class Input_element(Element):
     def __init__(self, *args):
         """arguments: type name """
         super().__init__(*args) # inicjalizuj type, name
-        Input_element.items[self.id] = self       
+        Input_element.items[self.id] = self     
+        self.prev_value = None  
 
 
     def __str__(self, ):
