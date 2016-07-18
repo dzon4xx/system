@@ -6,15 +6,10 @@ import logging
 from functools import wraps
 
 
-def create_db_object(is_log_disabled = True):
+def create_db_object():
     root = sys.path[-1]
     db_path =  "\\".join([root, 'sys_database', "sys_database.db"])
-
-    db_logger = logging.getLogger('DB')
-    db_logger.disabled = is_log_disabled
-    db_logger.setLevel(logging.DEBUG)
-
-    return Database(db_path, db_logger)
+    return Database(db_path)
 
 def save_create(func):
     """Handles connection commit eventual rollback and closing while saving or creating to database"""
@@ -55,9 +50,12 @@ def read_remove(func):
 
 class Database:
     """ Handles system database """
-    def __init__(self, path, logger):
+    def __init__(self, path):
         self.path = path
-        self.logger = logger
+        self.logger = logging.getLogger('DB')
+        self.logger.disabled = True
+        self.logger.setLevel(logging.DEBUG)
+
         self.con = None
         self.cur = None
         self.__connected = False
@@ -117,6 +115,12 @@ class Database:
         sql_command = self._put_spaces(self.sql_SELECT, '*', self.sql_FROM, Object.table_name)
         self.cur.execute(sql_command)
         return self.cur.fetchall()
+
+    def load_objects_from_table(self, Object):
+        table = self.get_table(Object)
+        for data in table:
+            data = list(data)
+            Object(data)
 
     @read_remove
     def remove_table(self, Object):
