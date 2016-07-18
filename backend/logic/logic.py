@@ -22,11 +22,13 @@ from backend.communication.communication import Communication
 
 class Logic(threading.Thread):
 
-    def __init__(self, comunication):
-        super().__init__(self, )
-        self.__comunication = comunication
+    def __init__(self, group=None, target=None, name=None, args=(), kwargs=None, verbose=None):
+        threading.Thread.__init__(self, group=None, target=None, name='LOGIC')
+                 
+        self.__comunication = args[0]
         self.__db = create_db_object()
-        self.__logger = logging.getLogger('LOGIC')
+        self.logger = logging.getLogger('LOGIC')
+
         self.tasks = []
 
         self.__setup()
@@ -37,36 +39,32 @@ class Logic(threading.Thread):
         self.__create_regulations()
 
     def __create_elements(self, ):
-        input_elements_table = self.__db.get_table(Input_element)
-        output_elements_table = self.__db.get_table(Output_element)
-        for input_element_data in input_elements_table:
-            input_element_data = list(input_element_data)
-            input_element_data[Input_element.COL_TYPE] = et(input_element_data[Input_element.COL_TYPE]) # konwersja typu z int do enum
-            Input_element(*input_element_data)
-
-        for output_element_data in output_elements_table:
-            output_element_data = list(output_element_data)
-            output_element_data[Input_element.COL_TYPE] = et(output_element_data[Input_element.COL_TYPE]) # konwersja typu z int do enum
-            Output_element(*output_element_data)
+        self.__db.load_objects_from_table(Input_element)
+        self.__db.load_objects_from_table(Output_element)
 
     def __create_dependancies(self,):
-        dependancies_table = self.__db.get_table(Dependancy)
-        for dependancy_data in dependancies_table:
-            Dependancy(*dependancy_data)
+        self.__db.load_objects_from_table(Dependancy)
+
 
     def __create_regulations(self,):
-        pass
+        self.__db.load_objects_from_table(Regulation)
 
     def __process_msg(self, msg):
         msg = msg.split(',')
-        return [int(val) for val in msg]
+        type = msg[0][0]
+        id = int(msg[0][1:])
+        val = int(msg[1])
+        return type, id, val
 
     def __check_com_buffer(self, ):
         """Sprawdz bufor komunikacyjny jesli pelny to ustaw desired value"""
         if self.__comunication.out_buffer:
             for msg in self.__comunication.out_buffer:
-                el_id, value = self.__process_msg(msg)
-                Element.items[el_id].set_desired_value(0, value) # priorytet wiadomosci od klienta jest najwyzszy - 0. 
+                type, id, value = self.__process_msg(msg)
+                if type == 'e':
+                    Element.items[id].set_desired_value(0, value) # priorytet wiadomosci od klienta jest najwyzszy - 0. 
+                    self.logger.debug('Set desired value el: %s val: %s', id, value)
+            #tutaj zalozyc locka zeby komunikacja nie pisala
             self.__comunication.out_buffer = [] # wyczysc bufor
 
     def __check_elements_values_and_notify(self, ):
@@ -82,12 +80,12 @@ class Logic(threading.Thread):
         """Sprawdza zaleznosci i regulacje. jesli sa spelnione to wysyla sterowanie"""
 
         for dep in Dependancy.items.values():
-            dep.evaluate_cause()
-            for effect in dep.effects:
+            dep.evaluate_cause()    #sprawdz przyczyne
+            for effect in dep.effects: #wykonaj nie wykonane zadania
                 if not effect.done:
                     effect.run() #jesli efekt ma wystapic w danym momencie to powiadomi element wyjsciowy
 
-    def __generate_tasks(self,):
+    def __generate_new_tasks(self,):
         for out_element in Output_element.items.values():
             if out_element.value != out_element.desired_value:
                 task = Task(status = task_stat.new,
@@ -95,10 +93,17 @@ class Logic(threading.Thread):
                             value = out_element.desired_value)
                 self.tasks.append(task)
 
+    def __clean_done_tasks(self, ):
+        self.tasks = [task for task in self.tasks if task.status != task_stat.done]
+
     def run(self, ):
-        self.__check_com_buffer()
-        self.__check_elements_values_and_notify()
-        self.__evaluate_relations_and_set_des_values()
-        self.__generate_tasks()
+        self.logger.info("Start")
+        while True:
+            self.__clean_done_tasks()
+            self.__check_com_buffer()
+            self.__check_elements_values_and_notify()
+            self.__evaluate_relations_and_set_des_values()
+            self.__generate_new_tasks()
+
 
 

@@ -60,6 +60,6 @@ class task_stat(AutoNumber):
     done = ()
     logged = ()
 
-class efect_status(AutoNumber):
+class effect_status(AutoNumber):
     new = ()
     done = ()

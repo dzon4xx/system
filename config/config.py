@@ -1,31 +1,28 @@
 import sys
+import logging
 
-from server__client.server.models.user import User
 from common.elements.element import Element
 from common.elements.input_element import Input_element
 from common.elements.output_element import Blind, Output_element
-from common.modules.input_module import Input_module, Ambient_module
+from common.modules.input_module import Input_module
+from common.modules.anfa_ambient import Anfa_ambient
 from common.modules.output_module import Output_module 
 from common.modules.module import Module, Add_element_error
-
-from server__client.server.models.room import Room
-
 from common.relations.dependancy import Dependancy, Dependancy_config_error
 from common.relations.regulation import Regulation, Regulation_config_error
+from server__client.server.models.room import Room
+from server__client.server.models.user import User
 
 from common.sys_types import mt, et, rt, regt, gt
-
 from common.color_logs import color_logs
 
-from sys_database.database import Database
-
-import logging
+from sys_database.database import Database, create_db_object
 
 class System_creator():
     
-    def __init__(self, logger, db):
-        self.db = db
-        self.logger = logger
+    def __init__(self):
+        self.db = create_db_object()
+        self.logger = logging.getLogger('CONF')
         self.room_id    = 0
         self.element_id = 0
         self.module_id  = 0
@@ -44,46 +41,6 @@ class System_creator():
                              Regulation, 
                              User)
 
-    def get_rooms(self):
-        """Zwraca pokoje razem z elementami wejsciowymi i wyjsciowymi"""
-
-        rooms_table = self.db.get_table(Room)
-        elements_table = self.get_table(Element)
-
-        rooms=[]
-        for room_data in rooms_table:
-            rooms.append(Room(*room_data))
-
-    def get_modules(self,):
-        """Zwraca moduly wejsciowe i wyjsciowe w systemie"""
-
-        modules_table = self.db.get_table(Module)
-        elements_table = self.db.get_table(Element)
-
-        input_modules = []
-        output_modules = []
-        #Odzyskaj moduly z bazy danych
-        for module_data in modules_table:
-            modules_data[1] = mt(modules_data[1]) # Typ jako enum
-            if module_data[1] in Module.input_modules:
-                input_modules.append(Module(*module_data))
-
-            elif module_data[1] in Module.output_modules:
-                output_modules.append(Module(*module_data))
-
-        #Odzyskaj elementy z bazy danych i przypisz je modulom
-        for element_data in elements_table:
-            element_type = et(element_data[Element.TYPE])
-            element_module_id = element_data[Element.MODULE]
-            if element.type in Element.input_elements:
-                for module in input_modules:
-                    if element_module_id == module.id:
-                        element_data[Element.TYPE]
-                        element = Element(element_data)
-                        module.add_element(element, element.port)
-
-        return [input_modules, output_modules]
-
     def add_room(self, type = None, name = ''):      
         room = Room(self.room_id ,type, name)
         self.room_id += 1
@@ -93,7 +50,7 @@ class System_creator():
      
         if type in Module.input_modules:
             if type == mt.ambient:
-                module = Ambient_module(self.module_id, type, name)
+                module = Anfa_ambient(self.module_id, type, name)
             else:
                 module = Input_module(self.module_id, type, name)
         else:
@@ -188,13 +145,13 @@ class System_creator():
     def __save_modules(self, ):
         for module in Module.items.values():
             if module.type == mt.ambient:
-                self.db.save(Input_module, (module.id, module.type.value, module.name, ",".join([str(element.id) for element in module.regs if (element != None)])))
+                self.db.save(Input_module, (module.id, module.type.value, module.name, ))
             
             elif module.type in Module.input_modules:
-                self.db.save(Input_module, (module.id, module.type.value, module.name, ",".join([str(element.id) for element in module.ports if (element != None)])))
+                self.db.save(Input_module, (module.id, module.type.value, module.name, ))
             
             elif module.type in Module.output_modules:
-                self.db.save(Output_module, (module.id, module.type.value, module.name,))
+                self.db.save(Output_module, (module.id, module.type.value, module.name, ))
             
     def __save_rooms(self, ):
         for room in Room.items.values():
@@ -221,15 +178,8 @@ class System_creator():
 
 color_logs()
 
-root = sys.path[-1]
-db_path =  "\\".join([root, 'sys_database', "sys_database.db"])
-
-conf_logger = logging.getLogger('CONF')
-db_logger = logging.getLogger('DB')
-db_logger.disabled = False
-db_logger.setLevel(logging.DEBUG)
-
-system = System_creator(conf_logger, Database(db_path, db_logger))
+system = System_creator()
+system.logger.setLevel('DEBUG')
 
 system.create_tables()
 
