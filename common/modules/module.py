@@ -1,6 +1,7 @@
 from common.base_object import Base_object
 from enum import Enum
 from common.sys_types import mt, et
+from time import time 
 
 class Add_element_error(Exception):
     def __init__(self, msg):
@@ -33,9 +34,27 @@ class Module(Base_object):
         Module.items[self.id] = self 
         self.num_of_ports = Module.num_of_ports[self.type]
         self.ports = {}
+        self.regs = {}
         self.modbus = None
+
+        self.available = True
+        self.timer = 0
+        self.time_out = 0 
+        self.correct_trans_num = 0
         self.tran_num = 0
         self.courupted_trans_num = 0
+
+    def is_available(self, ):
+        return self.available
+
+    def set_timeout(self, time_out):
+
+        self.time_out = time_out
+
+        if time() - self.timer > self.time_out:
+            self.timer = time()
+            self.available = True
+        
 
     def check_port_range(self, port):
         if port>self.num_of_ports-1 or port<0:

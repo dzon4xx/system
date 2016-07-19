@@ -179,7 +179,7 @@ class Modbus():
 
         self.port = port
         self.bauderate = bauderate
-        self.serial =  serial.Serial(port=port, baudrate=bauderate, timeout=0.1, parity=serial.PARITY_NONE)
+        self.serial =  serial.Serial(port=port, baudrate=bauderate, timeout=0.02, parity=serial.PARITY_NONE)
 
         self.read_regs_obj = Read_regs_function()
         self.write_regs_obj = Write_regs_function()
@@ -222,11 +222,11 @@ class Modbus():
     def _validate_response(self, slave_address, response, function):
 
         #check frame length
+        if len(response) == 0:
+            raise ValueError('Slave {} is not responding'.format(slave_address))
+
         if len(response) < function.min_response_bytes:
-            raise ValueError('Too short response for {} (minimum length {} bytes). Response: {!r}'.format(\
-        function,
-        function.min_response_bytes,
-        response))
+            raise ValueError('Slave {} returns too short response: {!r}'.format(slave_address, response))
 
         #check checksum equility
         received_checksum = response[-Modbus.NUMBER_OF_CRC_BYTES:]
@@ -234,11 +234,8 @@ class Modbus():
         calculated_checksum = _calculate_crc(response_without_checksum)
 
         if received_checksum != calculated_checksum:
-            template = 'Checksum error. Checksum is {!r} instead of {!r} . The response is: {!r}'
-            text = template.format(
-                    received_checksum,
-                    calculated_checksum,
-                    response)
+            template = 'Slave {} checksum error. The response is: {!r}'
+            text = template.format(slave_address, response)
             raise ValueError(text)
 
         # Check slave address
@@ -252,11 +249,11 @@ class Modbus():
         received_function_code = response[Modbus.BYTEPOSITION_FOR_FUNCTIONCODE]
 
         if received_function_code == self.__set_bit_on(function.code, Modbus.BITNUMBER_FUNCTIONCODE_ERRORINDICATION):
-            raise ValueError('The slave is indicating an error. The response is: {!r}'.format(response))
+            raise ValueError('Slave {} is indicating an error. The response is: {!r}'.format(slave_address, response))
 
         elif received_function_code != function.code:
-            raise ValueError('Wrong functioncode: {} instead of {}. The response is: {!r}'.format( \
-                received_function_code, function.code, response))
+            raise ValueError('Slave {} wrong functioncode: {} instead of {}. The response is: {!r}'.format( \
+                slave_address, received_function_code, function.code, response))
 
     def __set_bit_on(self, val, bit_num):
         return val | (1 << bit_num)

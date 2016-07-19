@@ -61,7 +61,8 @@ class Logic_manager(threading.Thread):
             if element.new_val_flag:
                 element.notify_objects()
                 element.new_val_flag = False
-                self.__comunication.in_buffer.append((element.id, element.value))
+                msg = 'e' + str(element.id) + ',' + str(element.value)
+                self.__comunication.in_buffer.add(msg)
 
     def __evaluate_relations_and_set_des_values(self, ):
         """Sprawdza zaleznosci i regulacje. jesli sa spelnione to wysyla sterowanie"""
@@ -86,7 +87,7 @@ class Logic_manager(threading.Thread):
     def run(self, ):
         self.logger.info("Start")
         while True:
-            time.sleep(0.01)
+            time.sleep(0.1)
             self.__clean_done_tasks()
             self.__check_com_buffer()
             self.__check_elements_values_and_notify()

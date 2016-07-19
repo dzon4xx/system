@@ -43,7 +43,7 @@ class System_creator():
                              User)
 
     def add_room(self, type = None, name = ''):      
-        room = Room(self.room_id ,type, name)
+        room = Room(self.room_id ,type, name, [], [])
         self.room_id += 1
         self.logger.info('Created room: ' + str(room))
 
@@ -162,7 +162,7 @@ class System_creator():
 
     def __save_elements(self, ):
         for element in Element.items.values():
-            #self.db.save(Element, (element.id, element.type.value, element.name))
+            self.db.save(Element, (element.id, element.type.value, element.name, element.module_id, element.reg_id))
             if element.type in Input_element.types:
                 self.db.save(Input_element, (element.id, element.type.value, element.name, element.module_id, element.reg_id))
             elif element.type in Output_element.types:
