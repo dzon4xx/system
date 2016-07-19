@@ -9,21 +9,25 @@ from common.relations.regulation import Regulation
 
 def load_system_representation():
     db = create_db_object() #database object
-    rooms_data = db.get_table(Room)
-    for room_data in rooms_data:
-        room_data = list(room_data) #room data is returned from db as tuple
-        room = Room(*room_data[:Room.COL_ELS])
-        
-        room_data[Room.COL_ELS] = [db.read(Visual_element, 'id', int(el_num)) for el_num in room_data[Room.COL_ELS].split(',')] # tworzy wizualizacje
-        room_data[Room.COL_TYPE] = rt( room_data[Room.COL_TYPE])
+    db.load_objects_from_table(Room)
+    #rooms_data = db.get_table(Room)
 
-        if room_data[Room.COL_REGS]:    # jesi w pokoju sa regulacje
-            for reg_id in room_data[Room.COL_REGS].split(','):
+    for room in Room.items.values():
+        if room.elements: # if there are elments in room
+            room.elements = [db.read(Visual_element, 'id', int(el_num)) for el_num in room.elements.split(',')]
+        else:
+            room.elements = [] # so the type of room.elements is always list
+        if room.regulations: # if there are regulations in room
+            regulations = room.regulations
+            room.regulations = []
+            for reg_id in regulations.split(','):
                 reg_data = db.read_simple(Regulation.table_name, 'id', int(reg_id))
                 reg_data[0] = 'r'+str(reg_data[0]) #dodanie litery r do id zeby bylo wiadomo ze chodzi o wartosc nastawy regulacji
-                room_data[Room.COL_ELS].append(Visual_element(*reg_data[:3]))
+                room.regulations.append(Visual_element(*reg_data[:3]))
+        else:
+            room.regulations = []
 
-        for el in room_data[Room.COL_ELS]: # Adds elements to groups and groups to rooms
+        for el in room.elements: # Adds elements to groups and groups to rooms
             group_type = Group.el_to_group_map[el.type]
             group = Group(group_type)
             if group_type not in room.groups.keys():

@@ -34,7 +34,7 @@ class Visual_element(Base_object):
             return self.value_field()
         elif self.type in (regt.hum, regt.temp):
             return self.input_field()
-        elif self.type in (et.heater, et.pir, et.rs,):
+        elif self.type in (et.heater, et.pir, et.rs, et.switch):
             return self.state_field()
         elif self.type==et.led:
             return self.slider()
@@ -43,7 +43,7 @@ class Visual_element(Base_object):
 
     @field
     def value_field(self, ):
-        return div(str(self.value), cls="field-value field-value-text text-center")
+        return div(str(self.value), cls="field-value field-value-text text-center", id='e'+str(self.id))
 
     @field
     def input_field(self, ):
@@ -51,7 +51,7 @@ class Visual_element(Base_object):
     
     @field
     def state_field(self, ): 
-        return div(cls="field-value field-value-icon on")
+        return div(cls="field-value field-value-icon off on")
     
     @field
     def value(self, ):
@@ -70,8 +70,8 @@ class Visual_element(Base_object):
 
     @field
     def blind(self, ):
-        btn_up = button('up', cls='btn-lg btn-default', onclick = self.__send_function(100))
-        btn_down = button('down', cls='btn-lg btn-default', onclick = self.__send_function(0))         
+        btn_up = button('up', cls='btn-md btn-default', onclick = self.__send_function(100))
+        btn_down = button('down', cls='btn-md btn-default', onclick = self.__send_function(0))         
         return btn_up, btn_down
 
     def __send_val(self, ):
@@ -90,27 +90,6 @@ class Visual_element(Base_object):
 
     def get_input(self, ):
         html= tag('span', atr="""class="fa fa-circle\"""", inner=self.value)
-
-
-
-def save_create(func):
-    """Handles connection commit eventual rollback and closing while saving or creating to database"""
-    @wraps(func)
-    def func_wrapper(*args, **kwargs):
-        if args[0].connect():
-            try:
-                args[0].cur = args[0].con.cursor()            
-                return func(*args, **kwargs)               
-            except sql.Error as e:
-                args[0].con.rollback()               
-                args[0].logger.exception( "DATABASE SAVE/CREATE Error %s:",  e.args[0])
-                pass
-            finally:
-                args[0].con.commit() 
-                args[0].close()
-        else:
-            pass
-    return func_wrapper
 
 
 

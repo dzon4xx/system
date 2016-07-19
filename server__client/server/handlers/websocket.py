@@ -29,6 +29,7 @@ class Websocket(WebSocketHandler):
             data = message.split(',')
             Visual_element.items[int(data[0][1:])].value = data[1]
             for con in Websocket.clients:
+                socket_logger.debug('passing')
                 con.write_message(message)
         else:
             Websocket.logic.write_message(message)

@@ -1,7 +1,12 @@
-from common.base_object import Base_object
+from collections import OrderedDict
+
 from tornado import template
 import tornado.web
 from dominate.tags import div, br, h3
+
+from common.base_object import Base_object
+from common.sys_types import rt
+
 
 class Room(Base_object):
     """Defines room display in system"""
@@ -15,11 +20,11 @@ class Room(Base_object):
     groups_per_row = 3
 
     def __init__(self, *args):
-        super().__init__(*args) # inicjalizuj id type, name
+        super().__init__(args[0], rt(args[1]), args[2]) # inicjalizuj id type, name
         Room.items[self.id] = self
-        self.elements = []
-        self.regulations = []
-        self.groups = {}
+        self.elements = args[Room.COL_ELS]
+        self.regulations = args[Room.COL_REGS]
+        self.groups = OrderedDict()
 
 
     def add_element(self, *elements):
