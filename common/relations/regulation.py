@@ -34,10 +34,11 @@ class Regulation(Base_object):
         self.out_el_id = args[Regulation.COL_OUT_EL_ID]
         self.set_point  = args[Regulation.COL_SET_POINT]
         self.dev    = args[Regulation.COL_DEVIATION]    # deviation dopuszczalne odchylenie od nastawy
-        #self.control = Regulation[self.type]
+        self.control = self.proportional_control # For now only proportional control
 
         Element.items[self.feed_el_id].subscribe(self)
 
+        self.priority = 5
         self.feed_val = None
 
     def __check_arguments(self, feed_el_id, out_el_id,  set_point, dev):
@@ -51,12 +52,20 @@ class Regulation(Base_object):
         #sprawdzanie wilgotnosci
 
     def run(self, ):
-        
-        out_val =  self.control(feed_val, self.hist)
-        self.out_el.set_desired_value(self, out_val)
+        """calculates whether output element should be on or off"""
+        out_val =  self.control()
+        Output_element.items[self.out_el_id].set_desired_value(self.priority, out_val)
 
-    def direct_control(self, feed_val, hist):
-        pass
+    def proportional_control(self, ):
+        ON = 1
+        OFF = 0
+        if not self.feed_val: # if sensor does not returns any valu - its val == None
+            return OFF
+
+        if self.feed_val < self.set_point:
+            return ON
+        else:
+            return OFF
 
     def inverse_control(self, ):
         pass

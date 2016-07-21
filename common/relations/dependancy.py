@@ -68,7 +68,6 @@ class Effect():
             return True
         return False
 
-
 class Dependancy():
 
     table_name = 'dependancy'

@@ -49,17 +49,21 @@ class Logic_manager(threading.Thread):
             for msg in self.__comunication.out_buffer:
                 type, id, value = self.__process_msg(msg)
                 if type == 'e':
-                    Element.items[id].set_desired_value(0, value) # priorytet wiadomosci od klienta jest najwyzszy - 0. 
-                    self.logger.debug('Set desired value el: %s val: %s', id, value)
+                    Output_element.items[id].set_desired_value(0, value) # priorytet wiadomosci od klienta jest najwyzszy - 0. 
+                    #self.logger.debug('Set desired value el: %s val: %s', id, value)
+                elif type == 'r':
+                    Regulation.items[id].set_point = value
+            self.logger.debug(Output_element.elements_str())
+
             #tutaj zalozyc locka zeby komunikacja nie pisala
-            self.__comunication.out_buffer = [] # wyczysc bufor
+            self.__comunication.out_buffer = set() # wyczysc bufor
 
     def __check_elements_values_and_notify(self, ):
         """Sprawdza czy modbus ustawil stany elementow"""
         clock.evaluate_time()
         for element in Element.items.values():
             if element.new_val_flag:
-                element.notify_objects()
+                element.notify_objects() # powiadamia zainteresowane obiekty
                 element.new_val_flag = False
                 msg = 'e' + str(element.id) + ',' + str(element.value)
                 self.__comunication.in_buffer.add(msg)
@@ -73,6 +77,9 @@ class Logic_manager(threading.Thread):
                 if not effect.done:
                     effect.run() #jesli efekt ma wystapic w danym momencie to powiadomi element wyjsciowy
 
+        for reg in Regulation.items.values():
+            reg.run()
+
     def __generate_new_tasks(self,):
         for out_element in Output_element.items.values():
             if out_element.value != out_element.desired_value:
@@ -85,7 +92,7 @@ class Logic_manager(threading.Thread):
         self.tasks = [task for task in self.tasks if task.status != task_stat.done]
 
     def run(self, ):
-        self.logger.info("Start")
+        self.logger.info('Thread {} start'. format(self.name))
         while True:
             time.sleep(0.1)
             self.__clean_done_tasks()
