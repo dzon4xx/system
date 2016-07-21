@@ -26,13 +26,24 @@ class System_creator():
         self.logger = logging.getLogger('CONF')
         self.room_id    = 0
         self.element_id = 0
-        self.module_id  = 0
+        self.module_id  = 1 # address 0 is a broadcast address in modbus. Therfore id starts from 1
         self.dependancy_id = 0
         self.regulation_id = 0
      
     def create_tables(self, ):
 
         self.db.create_tables(Element,
+                             Input_element,                               
+                             Output_element, 
+                             Input_module, 
+                             Output_module, 
+                             Room,
+                             Dependancy,
+                             Regulation, 
+                             User)
+
+    def delete_tables(self, ):
+            self.db.delete_tables(Element,
                              Input_element,                               
                              Output_element, 
                              Input_module, 
@@ -186,10 +197,10 @@ system.create_tables()
 
 print("\n")
 
-system.add_module(mt.input, 'Input')           # 0
-system.add_module(mt.output, 'Output')         # 1
-system.add_module(mt.led_light, 'Led light')   # 2
-system.add_module(mt.ambient, 'Ambient')       # 3
+system.add_module(mt.input, 'Input')           # 1
+system.add_module(mt.output, 'Output')         # 2
+system.add_module(mt.led_light, 'Led light')   # 3
+system.add_module(mt.ambient, 'Ambient')       # 4
 
 print("\n")
 
@@ -207,156 +218,187 @@ print("\n")
 system.add_element(type = et.dht, 
                     name = 'Humidity and temperature',
                     room_id = 0,
-                    module_id = 3,
+                    module_id = 4,
                     port =   0)#0,1
 system.add_element(type = et.led, 
                     name = 'Led strip',
                     room_id = 0,
-                    module_id = 2,
+                    module_id = 3,
                     port =   0)#2
 system.add_element(type = et.pir, 
                     name = 'Motion',
                     room_id = 0,
-                    module_id = 0,
+                    module_id = 1,
                     port =   0)#3
+system.add_element(type = et.switch,
+                   name = 'Switch',
+                   room_id = 0,
+                   module_id = 1,
+                   port = 9)#4
 
 # id 1
 system.add_element(type = et.ds, 
                     name = 'Temperature',
                     room_id = 1,
-                    module_id = 3,
-                    port =   1)#4
+                    module_id = 4,
+                    port =   1)#5
 system.add_element(type = et.heater, 
                     name = 'Heater',
                     room_id = 1,
-                    module_id = 1,
-                    port =   0)#5
+                    module_id = 2,
+                    port =   0)#6
 system.add_element(type = et.blind, 
                     name = 'Blind',
                     room_id = 1,
-                    module_id = [1, 1],
-                    port =   [1, 2])#6
+                    module_id = [2, 2],
+                    port =   [1, 2])#7
 system.add_element(type = et.pir, 
                     name = 'Motion',
                     room_id = 1,
-                    module_id = 0,
-                    port =   1)#7
+                    module_id = 1,
+                    port =   1)#8
 system.add_element(type = et.rs, 
                     name = 'RS window',
                     room_id = 1,
-                    module_id = 0,
-                    port =   2)#8
+                    module_id = 1,
+                    port =   2)#9
+system.add_element(type = et.switch,
+                   name = 'Switch',
+                   room_id = 1,
+                   module_id = 1,
+                   port = 10)#10
 
 # id 2
 system.add_element(type = et.ds, 
                     name = 'Temperature',
                     room_id = 2,
-                    module_id = 3,
-                    port =   1)#9
+                    module_id = 4,
+                    port =   1)#11
 system.add_element(type = et.heater, 
                     name = 'Heater',
                     room_id = 2,
-                    module_id = 1,
-                    port =   3)#10
+                    module_id = 2,
+                    port =   3)#12
 system.add_element(type = et.led, 
                     name = 'Led strip',
                     room_id = 2,
-                    module_id = 2,
-                    port =   1)#11
+                    module_id = 3,
+                    port =   1)#13
+system.add_element(type = et.switch,
+                   name = 'Switch',
+                   room_id = 2,
+                   module_id = 1,
+                   port = 11)#14
+system.add_element(type = et.pir, 
+                    name = 'Motion',
+                    room_id = 2,
+                    module_id = 1,
+                    port =   14)#15
 
 # id 3
 system.add_element(type = et.ds, 
                     name = 'Temperature',
                     room_id = 3,
-                    module_id = 3,
-                    port =   1)#12
+                    module_id = 4,
+                    port =   1)#16
 system.add_element(type = et.pir, 
                     name = 'Motion',
                     room_id = 3,
-                    module_id = 0,
-                    port =   3)#13
+                    module_id = 1,
+                    port =   3)#17
 
 # id 4
 system.add_element(type = et.ds, 
                     name = 'Temperature',
                     room_id = 4,
-                    module_id = 3,
-                    port =   1)#14
+                    module_id = 4,
+                    port =   1)#18
 system.add_element(type = et.heater, 
                     name = 'Heater',
                     room_id = 4,
-                    module_id = 1,
-                    port =   4)#15
+                    module_id = 2,
+                    port =   4)#19
 system.add_element(type = et.led, 
                     name = 'Led strip',
                     room_id = 4,
-                    module_id = 2,
-                    port =   2)#16
+                    module_id = 3,
+                    port =   2)#20
 system.add_element(type = et.blind, 
                     name = 'Blind',
                     room_id = 4,
-                    module_id = [1, 1],
-                    port =   [5, 6])#17
-
+                    module_id = [2, 2],
+                    port =   [5, 6])#21
+system.add_element(type = et.switch,
+                   name = 'Switch',
+                   room_id = 4,
+                   module_id = 1,
+                   port = 12)#22
 system.add_element(type = et.pir, 
                     name = 'Motion',
                     room_id = 4,
-                    module_id = 0,
-                    port =   4)#18
+                    module_id = 1,
+                    port =   4)#23
 system.add_element(type = et.rs, 
                     name = 'RS window',
                     room_id = 4,
-                    module_id = 0,
-                    port =   5)#19
+                    module_id = 1,
+                    port =   5)#24
 
 # id 5
 system.add_element(type = et.ds, 
                     name = 'Temperature',
                     room_id = 5,
-                    module_id = 3,
-                    port =   1)#20
+                    module_id = 4,
+                    port =   1)#25
 system.add_element(type = et.heater, 
                     name = 'Heater',
                     room_id = 5,
-                    module_id = 1,
-                    port =   7)#21
+                    module_id = 2,
+                    port =   7)#26
 system.add_element(type = et.blind, 
                     name = 'Blind',
                     room_id = 5,
-                    module_id = [1, 1],
-                    port =   [8, 9])#22
-
+                    module_id = [2, 2],
+                    port =   [8, 9])#27
+system.add_element(type = et.switch,
+                   name = 'Switch',
+                   room_id = 5,
+                   module_id = 1,
+                   port = 13)#27
 system.add_element(type = et.pir, 
                     name = 'Motion',
                     room_id = 5,
-                    module_id = 0,
-                    port =   6)#23
+                    module_id = 1,
+                    port =   6)#28
 system.add_element(type = et.rs, 
                     name = 'RS Window',
                     room_id = 5,
-                    module_id = 0,
-                    port =   7)#24
+                    module_id = 1,
+                    port =   7)#29
 
 #id 6
 system.add_element(type = et.ds, 
                     name = 'Temperature',
                     room_id = 6,
-                    module_id = 3,
-                    port =   1)#25
+                    module_id = 4,
+                    port =   1)#30
 system.add_element(type = et.ls, 
                     name = 'Light level',
                     room_id = 6,
-                    module_id = 3,
-                    port =   2)#26
+                    module_id = 4,
+                    port =   2)#31
 system.add_element(type = et.rs, 
                     name = 'RS Main doors',
                     room_id = 6,
-                    module_id = 0,
-                    port =   8)#27
+                    module_id = 1,
+                    port =   8)#32
 
-system.add_dependancy('wlaczanie swiatla w lazience', '[e3=1] then e2=100; e2=0{100};')
-system.add_dependancy('Zaleznosc 2', '[d=mon,tue,wed,thu,fri] and [t=5:50] then e2=20{0}; e2=0{200}; e5=1{0}')
-system.add_regulation('Temp set', feed_el_id=0, out_el_id=10, set_point=20, dev=2)
+system.add_dependancy('wlaczanie swiatla w lazience', '[e3=1] then e2=100; e2=0{100};') #light tunr on for 100s after pir detection
+system.add_regulation('Temp set', feed_el_id=5, out_el_id=6, set_point=20, dev=2) # room 1 heating
+system.add_regulation('Temp set', feed_el_id=11, out_el_id=12, set_point=20, dev=2)# room 2 heating
+system.add_regulation('Temp set', feed_el_id=18, out_el_id=19, set_point=20, dev=2)# room 4 heating
+system.add_regulation('Temp set', feed_el_id=25, out_el_id=26, set_point=20, dev=2)#room 5 heating
+
 print("\n")
 system.save()
 
