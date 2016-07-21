@@ -19,7 +19,7 @@ class Communication_manager(threading.Thread):
         
         self.msg = None # msg from websocet
 
-        self.conn = websocket.create_connection(Communication_manager.url, header = {'name' :'logic'}, on_message = self.on_message)
+        self.conn = websocket.create_connection(Communication_manager.url, header = {'name' :'logic'})
 
         wst = threading.Thread(target = self.listen_ws)
         wst.setDaemon(True)
@@ -27,7 +27,7 @@ class Communication_manager(threading.Thread):
 
 
     def run(self, ):
-        self.logger.info("Start")
+        self.logger.info('Thread {} start'. format(self.name))
         try:
             while True:
                 time.sleep(0.1)
@@ -41,11 +41,12 @@ class Communication_manager(threading.Thread):
             self.logger.error("Websocet disconnected")
             os._exit(1)
 
-    def on_message(self, ):
-        self.out_buffer.add(self.msg)
 
     def listen_ws(self, ):
-        self.msg = self.conn.recv()
+        while True:
+            self.msg = self.conn.recv()
+            self.out_buffer.add(self.msg)
+            #self.logger.debug(self.msg)
 
 
 
