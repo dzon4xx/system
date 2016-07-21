@@ -179,7 +179,12 @@ class Modbus():
 
         self.port = port
         self.bauderate = bauderate
-        self.serial =  serial.Serial(port=port, baudrate=bauderate, timeout=0.02, parity=serial.PARITY_NONE)
+        self.connected = False
+        try:
+            self.serial =  serial.Serial(port=port, baudrate=bauderate, timeout=0.02, parity=serial.PARITY_NONE)
+            self.connected = True
+        except serial.SerialException:
+            self.logger.error("Can't open port {}".format(port))
 
         self.read_regs_obj = Read_regs_function()
         self.write_regs_obj = Write_regs_function()
