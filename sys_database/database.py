@@ -153,10 +153,10 @@ class Database:
         """Reads object based on given key from database"""
         sql_command = self._put_spaces(self.sql_SELECT, "*", self.sql_FROM, Object.table_name, self.sql_WHERE, key_name, '=', '?')
         self.cur.execute(sql_command, (key,))
-        object_data = list(self.cur.fetchone())
+        object_data = self.cur.fetchone()
         if not object_data:
             return False
-        return Object(*object_data)
+        return Object(*list(object_data))
 
     @read_remove
     def read_simple(self, table_name, key_name, key):
