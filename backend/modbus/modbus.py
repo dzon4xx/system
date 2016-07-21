@@ -175,7 +175,7 @@ class Modbus():
     BITNUMBER_FUNCTIONCODE_ERRORINDICATION = 7
 
     def __init__(self, port, bauderate):
-        self.logger = logging.getLogger('MODBUS_MAN')
+        self.logger = logging.getLogger('MODBUS')
 
         self.port = port
         self.bauderate = bauderate
@@ -213,7 +213,7 @@ class Modbus():
         try:
             self._validate_response(slave_address, response, self.read_regs_obj)
         except ValueError as e:
-            self.logger.debug(e)
+            self.logger.warn(e)
             return False
         else:
             payload = _byte_string_to_list(response[self.read_regs_obj.payload_position : -Modbus.NUMBER_OF_CRC_BYTES])
