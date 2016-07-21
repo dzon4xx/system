@@ -30,8 +30,8 @@ class Regulation(Base_object):
         self.__check_arguments(*args[Regulation.COL_FEED_EL_ID:])
         super().__init__(args[0], regt(args[1]), args[2]) # inicjalizuj id type, name
         Regulation.items[self.id] = self
-        self.out_el_id  = args[Regulation.COL_FEED_EL_ID]
-        self.feed_el_id = args[Regulation.COL_OUT_EL_ID]
+        self.feed_el_id  = args[Regulation.COL_FEED_EL_ID]
+        self.out_el_id = args[Regulation.COL_OUT_EL_ID]
         self.set_point  = args[Regulation.COL_SET_POINT]
         self.dev    = args[Regulation.COL_DEVIATION]    # deviation dopuszczalne odchylenie od nastawy
         #self.control = Regulation[self.type]
