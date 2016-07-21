@@ -36,8 +36,14 @@ def load_system_representation():
             else:
                 room.groups[group_type].elements.append(el)
 
-        #room.add_element(*room_data[Room.COL_ELS])
-    pass
+        for reg in room.regulations:
+            group_type = Group.el_to_group_map[reg.type]
+            group = Group(group_type)
+            if group_type not in room.groups.keys():
+                room.groups[group_type] = group
+                group.elements.append(reg)
+            else:
+                room.groups[group_type].elements.append(reg)
 
 
 if __name__ == "__main__":
