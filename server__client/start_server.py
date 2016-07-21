@@ -1,4 +1,8 @@
 #!/usr/bin/python
+#import ptvsd
+#tcp://server@localhost:8081
+#ptvsd.enable_attach(secret="server", address = ('127.0.0.1', 8081) )
+#ptvsd.wait_for_attach()
 from os import path
 import tornado
 from server.handlers.init_handler import InitHandler
