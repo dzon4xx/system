@@ -15,6 +15,6 @@ class Input_element(Element):
 
 
     def __str__(self, ):
-        return  "".join([super().__str__(), "\tmodule id: ", str(self.module_id), "\tport id: ", str(self.reg_id)])
+        return  "".join([super().__str__(), "\prev val: ", str(self.prev_value), ])
 
 

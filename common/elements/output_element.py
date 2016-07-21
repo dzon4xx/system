@@ -23,7 +23,7 @@ class Output_element(Element):
                 self.desired_value = val
                 return True
         elif val == 0:# przy wylaczeniu kazdy moze ustawic element
-            self.setter_priority = Output_element.max_priority
+            self.setter_priority = Output_element.defualt_priority
             self.desired_value = 0 
             return False
 
@@ -31,7 +31,16 @@ class Output_element(Element):
         pass
 
     def __str__(self, ):
-        return  "".join([super().__str__(), "\tdesired_value: ", str(self.desired_value), "\tmodule id: ", str(self.module_id), "\tport id: ", str(self.reg_id)])
+        return  "".join([super().__str__(), "\tdesired_value: ", str(self.desired_value)])#str(self.desired_value), "\tmodule id: ", str(self.module_id), "\tport id: ", str(self.reg_id)])
+
+    def elements_str():
+        string = "\n"
+        for element in Output_element.items.values():
+            el_str = str(element) 
+            string += el_str + "\n"
+
+        return string
+
 
 
 class Blind(Output_element):
