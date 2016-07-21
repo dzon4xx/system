@@ -123,10 +123,11 @@ class Database:
             Object(*data)
 
     @read_remove
-    def remove_table(self, Object):
-        """Removes table from database"""
-        self.cur.execute("DROP TABLE " + Object.table_name)
-        self.logger.info("Table: " + Object.table_name + " droped")
+    def delete_tables(self, *Objects):
+        """Removes tables from database"""
+        for Object in Objects:
+            self.cur.execute("DROP TABLE " + Object.table_name)
+            self.logger.info("Table: " + Object.table_name + " droped")
 
     @save_create
     def save(self, Object, db_values):
