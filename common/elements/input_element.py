@@ -4,7 +4,7 @@ from common.sys_types import et
 class Input_element(Element):
     table_name = "input_elements"
 
-    types = [et.ds, et.dht_hum, et.dht_temp, et.pir, et.rs, et.ls]
+    types = [et.ds, et.dht_hum, et.dht_temp, et.pir, et.rs, et.ls, et.switch]
     items = {}
 
     def __init__(self, *args):
