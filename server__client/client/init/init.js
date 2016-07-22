@@ -100,6 +100,8 @@ function send_value(event) {
 }
 
 function system_init() {
+
+    window.addEventListener("hashchange", function () { scrollBy(0, -60) });
     $('.navbar-toggle').click(function () {
         $('.navbar-nav').toggleClass('slide-in');
         $('.side-body').toggleClass('body-slide-in');
