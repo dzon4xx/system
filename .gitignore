@@ -98,3 +98,7 @@ env/
 *.suo
 
 *.config
+
+*.VC.db
+
+*.VC.VC.opendb
