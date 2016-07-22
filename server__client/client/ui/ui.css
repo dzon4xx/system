@@ -63,12 +63,3 @@ background-color: rgba(0, 0, 0, 0);
   background-color: #fff;
   border-color: #8c8c8c;
 }
-
-.navbar-brand {
-  padding: 0px;
-}
-.navbar-brand>img {
-  height: 100%;
-  padding: 7px 15px;
-  width: auto;
-}
