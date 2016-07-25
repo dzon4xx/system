@@ -4,7 +4,7 @@ import tornado.web
 from ..models.user import User
 from sys_database.database import Database, create_db_object
 
-paths = (r'/auth/auth.html', r'/auth/tab.html', r'/auth/login.html', r'/auth/registration.html')
+paths = (r'auth/login_page.html',)
 
 actions = ['login', 'logout']   #nie zmieniac kolejnosci. mozna nazwe
 
@@ -13,8 +13,8 @@ class AuthenticationHandler(tornado.web.RequestHandler):
     def __init__(self, application, request, **kwargs):
         self.db = create_db_object()
         self.logger = logging.getLogger('AUTH')
-        self.logger.disabled = True
-        self.logger.setLevel("DEBUG")
+        self.logger.disabled = False
+        self.logger.setLevel(logging.INFO)
         return super().__init__(application, request, **kwargs)
 
     def login(self, data):
@@ -62,7 +62,7 @@ class AuthenticationHandler(tornado.web.RequestHandler):
             self.logger.warning("USER: " + str(db_user) + " not recognized while logging out")
 
     def get(self):
-        self.render(self.request.path.strip('/'))
+        self.render('login_page.html')
                 
     def validate_in_data(self, in_data):
         
