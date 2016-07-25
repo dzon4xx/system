@@ -43,6 +43,7 @@ def load_app(port, root):
         routers,
         **settings
     )
+    access_log.info("Starting server")
     application.listen(port)
     tornado.ioloop.IOLoop.instance().start()
 
@@ -52,7 +53,6 @@ if __name__ == "__main__":
 
     color_logs()
     root = path.dirname(__file__)
-    print ("start")
     load_system_representation()
     load_app(port, root)
     
