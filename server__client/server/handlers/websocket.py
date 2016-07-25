@@ -13,10 +13,15 @@ class Websocket(WebSocketHandler):
 
     def open(self, ):
       
-        if 'Name' in self.request.headers._dict:
-            self.name = self.request.headers._dict['Name']
+        if 'Secret' in self.request.headers._dict:
             Websocket.logic = self
-            socket_logger.info("logic connected")
+            secret = self.request.headers._dict['Secret']
+            if secret == 'f59c8e3cc40bdc367d81f0c6a84b1766':
+                self.name = 'logic'
+                socket_logger.info("logic connected")
+            else:
+                socket_logger.warn("Attempted unauthorized logic connection")
+                self.close()
         else:
             self.name = self.get_cookie('name')
             Websocket.clients.add(self)
