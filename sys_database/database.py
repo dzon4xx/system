@@ -53,8 +53,8 @@ class Database:
     def __init__(self, path):
         self.path = path
         self.logger = logging.getLogger('DB')
-        self.logger.disabled = True
-        self.logger.setLevel(logging.DEBUG)
+        self.logger.disabled = False
+        self.logger.setLevel(logging.WARN)
 
         self.con = None
         self.cur = None
