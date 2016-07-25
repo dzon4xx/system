@@ -1,3 +1,11 @@
+import os
+if os.name == 'posix':
+    is_RPI = True
+    import RPi.GPIO as GPIO
+
+else:
+    is_RPI = False
+
 import serial
 import logging
 from functools import wraps
@@ -81,16 +89,17 @@ def run_fun(func):
         fun_request_part, num_of_bytes_to_read = func(self, serial, slave_address, *args) # function specific part of request
         request += fun_request_part
         request += _calculate_crc(request)
-
+        if is_RPI: GPIO.output( self.ctrl_pin, True)   # Write mode       
         serial.write(request)
-
+        if is_RPI: GPIO.output( self.ctrl_pin, False)   # Listen mode       
         response = serial.read(num_of_bytes_to_read)
         return response
             
     return func_wrapper
 
 class Read_regs_function():
-    def __init__(self, ):
+    def __init__(self, ctrl_pin):
+        self.ctrl_pin = ctrl_pin
         self.min_request_bytes = 5
         self.min_response_bytes = 5
         self.code = 3
@@ -109,7 +118,8 @@ class Read_regs_function():
         return "Function 3 - read registers"
 
 class Write_regs_function():
-    def __init__(self, ):
+    def __init__(self, ctrl_pin):
+        self.ctrl_pin = ctrl_pin
         self.min_request_bytes = 9
         self.min_response_bytes = 8
         self.code = 16
@@ -129,7 +139,8 @@ class Write_regs_function():
 
 class Write_coils_function():
 
-    def __init__(self, ):
+    def __init__(self, ctrl_pin):
+        self.ctrl_pin = ctrl_pin
         self.min_request_bytes = 11
         self.min_response_bytes = 8
         self.code = 15
@@ -174,21 +185,30 @@ class Modbus():
     NUMBER_OF_CRC_BYTES = 2
     BITNUMBER_FUNCTIONCODE_ERRORINDICATION = 7
 
-    def __init__(self, port, bauderate):
+    def __init__(self, baudrate):
         self.logger = logging.getLogger('MODBUS')
-
-        self.port = port
-        self.bauderate = bauderate
+        self.baudrate = baudrate
         self.connected = False
+        self.port = ""
+        if is_RPI:
+            GPIO.setmode(GPIO.BCM)
+            self.ctrl_pin = 10
+            GPIO.setup(self.ctrl_pin, GPIO.OUT)
+            GPIO.output(self.ctrl_pin, False)   # listen mode
+            self.port = "/dev/ttyAMA0"
+        else:
+            self.port = "COM7"
+            self.ctrl_pin = None
+        
         try:
-            self.serial =  serial.Serial(port=port, baudrate=bauderate, timeout=0.02, parity=serial.PARITY_NONE)
+            self.serial =  serial.Serial(port=self.port, baudrate=baudrate, timeout=0.1, parity=serial.PARITY_NONE)
             self.connected = True
         except serial.SerialException:
-            self.logger.error("Can't open port {}".format(port))
+            self.logger.error("Can't open port {}".format(self.port))
 
-        self.read_regs_obj = Read_regs_function()
-        self.write_regs_obj = Write_regs_function()
-        self.write_coils_obj = Write_coils_function()
+        self.read_regs_obj = Read_regs_function(self.ctrl_pin)
+        self.write_regs_obj = Write_regs_function(self.ctrl_pin)
+        self.write_coils_obj = Write_coils_function(self.ctrl_pin)
 
     def write_regs(self, slave_address, start_reg_num, values):
         response = self.write_regs_obj.run(self.serial, slave_address, start_reg_num, values)
@@ -248,7 +268,7 @@ class Modbus():
 
         if response_address != slave_address:
             raise ValueError('Wrong return slave address: {} instead of {}. The response is: {!r}'.format( \
-                responseaddress, slaveaddress, response))
+                response_address, slave_address, response))
 
         # Check function code
         received_function_code = response[Modbus.BYTEPOSITION_FOR_FUNCTIONCODE]

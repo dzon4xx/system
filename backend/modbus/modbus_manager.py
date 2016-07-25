@@ -1,8 +1,8 @@
 import logging
 import threading
 import time
-import os
 from serial import SerialException
+
 from common.sys_types import mt, et, task_stat
 from common.elements.input_element import Input_element
 from common.elements.output_element import Output_element
@@ -25,7 +25,7 @@ class Modbus_manager(threading.Thread):
         self._db = create_db_object()
         self.logger = logging.getLogger('MODBUS_MAN')
 
-        self.modbus = Modbus('COM7', 115200)
+        self.modbus = Modbus(115200)
         self.modbus.logger.disabled = False
         self.tasks = None # tasks are instantated by start script
 
