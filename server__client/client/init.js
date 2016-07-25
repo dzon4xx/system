@@ -2,6 +2,29 @@
 ///<reference path="../lib/md5.js"/>
 
 
+function log(msg, color) {
+    color = color || "black";
+    bgc = "White";
+    switch (color) {
+        case "success": color = "Green"; bgc = "LimeGreen"; break;
+        case "info": color = "DodgerBlue"; bgc = "Turquoise"; break;
+        case "error": color = "Red"; bgc = "Black"; break;
+        case "start": color = "OliveDrab"; bgc = "PaleGreen"; break;
+        case "warning": color = "Tomato"; bgc = "Black"; break;
+        case "end": color = "Orchid"; bgc = "MediumVioletRed"; break;
+        default: color = color;
+    }
+
+    if (typeof msg == "object") {
+        console.log(msg);
+    } else if (typeof color == "object") {
+        console.log("%c" + msg, "color: PowderBlue;font-weight:bold; background-color: RoyalBlue;");
+        console.log(color);
+    } else {
+        console.log("%c" + msg, "color:" + color + ";font-weight:bold; background-color: " + bgc + ";");
+    }
+}
+
 function getCookie(cname) {
     var name = cname + "=";
     var ca = document.cookie.split(';');
@@ -49,8 +72,8 @@ class Auth {
 
     redirect_to_system() {
         $(".auth").empty();
-        $(".side-menu").load('ui/left_panel.html').show();
-        $(".side-body").load('ui/system', function (resp, status, xhr) {
+        $(".navigation-bar").load('ui/navigation_bar').show();
+        $(".system-content").load('ui/system', function (resp, status, xhr) {
             if (status == "success") {
                 $(document).trigger('system_redirect');
             }
@@ -58,9 +81,10 @@ class Auth {
     }
 
     redirect_to_login() {
+        document.cookie = "name="; //clear name cookie 
         var self = this;
-        $(".side-menu").empty().hide();
-        $(".side-body").empty();
+        $(".navigation-bar").empty();    //hide and empty navigation bar
+        $(".system-content").empty();
         $(".auth").load('auth/login_page.html', $.proxy(function (resp, status, xhr) {
             if (status = "success") {
                 $('#submit-button').on("click", $.proxy(self.submit_login, this));
@@ -77,7 +101,7 @@ class Auth {
             name: user_name,
             password: pwd
         });
-        console.log("submit");
+        log("submit login", 'info');
 
         $.post("auth", data, $.proxy(function (resp, status) {
             if (status == "success") {
@@ -94,7 +118,7 @@ class Auth {
 function send_value(event) {
     var id = event.currentTarget.id;
     val = document.getElementById(id).value;
-    id = id.slice(5);
+    id = id.slice('input'.length);
     console.log(id, val);
     ws.send(id + ',' + val);
 }
@@ -102,32 +126,38 @@ function send_value(event) {
 function system_init() {
 
     window.addEventListener("hashchange", function () { scrollBy(0, -60) });
-    $('.navbar-toggle').click(function () {
-        $('.navbar-nav').toggleClass('slide-in');
-        $('.side-body').toggleClass('body-slide-in');
-    });
-    $(".room-anchor").click(function () {
-        $('.navbar-nav').toggleClass('slide-in');
-        $('.side-body').toggleClass('body-slide-in');
-    });
+
     $("input").on('change', send_value)
     ws = new WebSocket("ws://" + location.host + "/websocket");
 
     ws.onmessage = function (evt) {
-        console.log(evt.data);
+        log(evt.data, 'success');
         var data = evt.data.split(',');
         var id = data[0];
         var value = data[1];
         var element = document.getElementById(id);
-        element.innerText = value;
+        var action = data[2];
+        if (action == undefined) {
+            element.innerText = value;
+        }
+        else if (action == 's') {
+            if (value == 1){
+                $(element).addClass("on");
+                $(element).removeClass("off");
+                log('class on');
+            }
+            else if (value == 0) {
+                $(element).removeClass("on");
+                $(element).addClass("off");
+                log('class off');
+            }
+        }
     }
-
-
 }
 
 $(document).ready(function () {
     $(document).on('system_redirect', system_init)
-    var auth = new Auth();
+    auth = new Auth();
     if (auth.is_logged_in()) {
         auth.redirect_to_system();
     }

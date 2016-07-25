@@ -8,19 +8,19 @@
                 <span class="icon-bar"></span>
             </button>
             <a class="navbar-brand" href="#"><img id="logo" src="{{static_url("graphics/logo.jpg")}}" /></a>
-        </div>
+</div>
 
         <div class="collapse navbar-collapse" id="myNavbar">
 
             <ul class="nav navbar-nav navbar-right">
-                <li><a href="/auth/logout"><span class="glyphicon glyphicon-log-out"></span> Log out</a></li>
+                <li><a onclick="auth.redirect_to_login()"><span class="glyphicon glyphicon-log-out"></span> Log out</a></li>
             </ul>
 
             <ul class="nav navbar-nav">
                 <li class="dropdown">
                     <a class="dropdown-toggle" data-toggle="dropdown" href="#">Rooms <span class="caret"></span></a>
                     <ul class="dropdown-menu">
-                        {% for room in rooms.values()%}
+                        {% for room in rooms%}
                         <li class="room-anchor"><a data-toggle="collapse" data-target="#myNavbar" href="#room{{room.id}}">{{room.name}}</a></li>
                         {% end %}
                     </ul>
