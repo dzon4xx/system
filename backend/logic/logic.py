@@ -65,7 +65,10 @@ class Logic_manager(threading.Thread):
             if element.new_val_flag:
                 element.notify_objects() # powiadamia zainteresowane obiekty
                 element.new_val_flag = False
-                msg = 'e' + str(element.id) + ',' + str(element.value)
+                if element.type in (et.pir, et.rs, et.switch, et.heater):
+                    msg = 'e' + str(element.id) + ',' + str(element.value) + ',' + 's'
+                else:
+                    msg = 'e' + str(element.id) + ',' + str(element.value) 
                 self.__comunication.in_buffer.add(msg)
 
     def __evaluate_relations_and_set_des_values(self, ):
