@@ -1,5 +1,5 @@
 from sys_database.database import create_db_object
-
+import logging
 from server__client.server.models.room import Room
 from server__client.server.models.group import Group
 from server__client.server.models.visual_element import *
@@ -10,7 +10,7 @@ from common.relations.regulation import Regulation
 def load_system_representation():
     db = create_db_object() #database object
     db.load_objects_from_table(Room)
-    #rooms_data = db.get_table(Room)
+    logger = logging.getLogger('SYS_REPR_CONF')
 
     for room in Room.items.values():
         if room.elements: # if there are elments in room
@@ -44,6 +44,8 @@ def load_system_representation():
                 group.elements.append(reg)
             else:
                 room.groups[group_type].elements.append(reg)
+        logger.info("Loaded room: {}".format(room.id))
+
 
 
 if __name__ == "__main__":
