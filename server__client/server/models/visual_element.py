@@ -7,7 +7,7 @@ from functools import wraps
 def field(func):
     @wraps(func) 
     def func_wrapper(*args, **kwargs):
-        field = div(cls = "field")
+        field = span(cls = "field")
         field_name = div(b(args[0].name), cls = "text-center")
         field_value = func(args[0])
         field.add(field_name, field_value)
@@ -43,15 +43,20 @@ class Visual_element(Base_object):
 
     @field
     def value_field(self, ):
-        return div(str(self.value), cls="field-value field-value-text text-center", id='e'+str(self.id))
+        return div(str(self.value), cls="field-value value-text text-center", id='e'+str(self.id))
 
     @field
     def input_field(self, ):
-        return input(str(self.value), type="number", cls="field-value field-value-text text-center", id="input" + str(self.id))
+        return input(str(self.value), type="number", cls="field-value value-text", id="input" + str(self.id))
     
     @field
-    def state_field(self, ): 
-        return div(cls="field-value field-value-icon off on")
+    def state_field(self, ):
+        st = "off"
+        if self.value == '1':
+            st = "on"
+        elif self.value == '0':
+            st = "off"
+        return div(cls="field-value field-value-icon "+st, id="e" + str(self.id))
     
     @field
     def value(self, ):
@@ -62,11 +67,11 @@ class Visual_element(Base_object):
     
     @field
     def slider(self,):
-        slider = div(cls="slider")
+
+        
         range = input( type="range", min="0", max="100",  cls="field-value", id="inpute" + str(self.id))
         lab = label(str(self.value), id="e" + str(self.id), style="margin-left:5px;")
-        slider.add(range, lab)
-        return slider
+        return range, lab 
 
     @field
     def blind(self, ):
