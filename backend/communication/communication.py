@@ -4,9 +4,6 @@ import logging
 import os
 import time
 
-
-
-
 class Communication_manager(threading.Thread):
     
     url = "ws://localhost:8888/websocket"
@@ -16,10 +13,17 @@ class Communication_manager(threading.Thread):
         self.logger = logging.getLogger('COM')
         self.in_buffer = set()
         self.out_buffer = set()
-        
+
         self.msg = None # msg from websocet
 
-        self.conn = websocket.create_connection(Communication_manager.url, header = {'name' :'logic'})
+        self.connected = False
+        try:
+            self.conn = websocket.create_connection(Communication_manager.url, header = {'secret' :'f59c8e3cc40bdc367d81f0c6a84b1766'})
+            self.connected = True
+        except:
+            self.logger.error("Can't connect to server")
+            return
+
 
         wst = threading.Thread(target = self.listen_ws)
         wst.setDaemon(True)
@@ -28,18 +32,18 @@ class Communication_manager(threading.Thread):
 
     def run(self, ):
         self.logger.info('Thread {} start'. format(self.name))
-        try:
-            while True:
-                time.sleep(0.1)
-
-                if self.in_buffer:
-                    while self.in_buffer:
-                        msg = self.in_buffer.pop()
-                        self.conn.send(msg)
+        if self.connected:
+            try:
+                while True:
+                    time.sleep(0.1)
+                    if self.in_buffer:
+                        while self.in_buffer:
+                            msg = self.in_buffer.pop()
+                            self.conn.send(msg)
             
-        except websocket.WebSocketConnectionClosedException:
-            self.logger.error("Websocet disconnected")
-            os._exit(1)
+            except websocket.WebSocketConnectionClosedException:
+                self.logger.error("Websocet disconnected")
+                os._exit(1)
 
 
     def listen_ws(self, ):
