@@ -39,7 +39,7 @@ class Module(Base_object):
 
         self.available = True
         self.timer = 0
-        self.time_out = 0 
+        self.timeout = 0 
         self.correct_trans_num = 0
         self.tran_num = 0
         self.courupted_trans_num = 0
@@ -47,11 +47,11 @@ class Module(Base_object):
     def is_available(self, ):
         return self.available
 
-    def set_timeout(self, time_out):
+    def set_timeout(self, timeout):
 
-        self.time_out = time_out
+        self.timeout = timeout
 
-        if time() - self.timer > self.time_out:
+        if time() - self.timer > self.timeout:
             self.timer = time()
             self.available = True
         

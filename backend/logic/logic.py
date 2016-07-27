@@ -1,6 +1,7 @@
 import logging
 import threading
 import time
+import queue
 
 from common.elements.element import Element
 from common.elements.input_element import Input_element
@@ -14,7 +15,6 @@ from sys_database.database import Database, create_db_object
 
 from common.sys_types import mt, et, regt, task_stat
 
-from backend.logic.task import Task
 
 
 class Logic_manager(threading.Thread):
@@ -26,7 +26,7 @@ class Logic_manager(threading.Thread):
         self.__db = create_db_object()
         self.logger = logging.getLogger('LOGIC')
 
-        self.tasks = []
+        self.tasks = queue.Queue()
 
         self.__setup()
 
@@ -86,19 +86,13 @@ class Logic_manager(threading.Thread):
     def __generate_new_tasks(self,):
         for out_element in Output_element.items.values():
             if out_element.value != out_element.desired_value:
-                task = Task(status = task_stat.new,
-                            out_element = out_element,
-                            value = out_element.desired_value)
-                self.tasks.append(task)
-
-    def __clean_done_tasks(self, ):
-        self.tasks = [task for task in self.tasks if task.status != task_stat.done]
+                self.tasks.put_nowait(out_element)
 
     def run(self, ):
         self.logger.info('Thread {} start'. format(self.name))
         while True:
             time.sleep(0.1)
-            self.__clean_done_tasks()
+
             self.__check_com_buffer()
             self.__check_elements_values_and_notify()
             self.__evaluate_relations_and_set_des_values()

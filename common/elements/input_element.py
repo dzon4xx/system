@@ -15,6 +15,6 @@ class Input_element(Element):
 
 
     def __str__(self, ):
-        return  "".join([super().__str__(), "\prev val: ", str(self.prev_value), ])
+        return  "".join([super().__str__(), "\tprev val: ", str(self.prev_value), ])
 
 

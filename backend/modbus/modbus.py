@@ -46,6 +46,14 @@ def _num_to_two_bytes_str(value, LsbFirst=False):
         return bytes([lsb, msb]) 
     else:
         return bytes([msb, lsb]) 
+
+def pretty_hex(bytes):
+    s = "\\"
+    for byte in bytes:
+        s += str(hex(byte))
+        s += "\\"
+
+    return s
     
 def run_fun(func):
     """ Wrapper for run functions of modbus functions. 
@@ -61,7 +69,8 @@ def run_fun(func):
         request += self.modbus._calculate_crc(request)
         if is_RPI: GPIO.output( self.modbus.ctrl_pin, True)   # Write mode
         while t() - self.modbus.sleep_timer < self.modbus.t_3_5:
-            pass # force 3.5char sleep time    
+            pass # force 3.5char sleep time
+
         self.modbus.serial.write(request)
         if is_RPI: GPIO.output( self.modbus.ctrl_pin, False)   # Listen mode 
         response = self.modbus.serial.read(num_of_bytes_to_read)
@@ -122,31 +131,45 @@ class Write_coils_function():
     def run(self, slave_address, start_coil_num, values):
         
         num_of_coils = len(values)
-        byte_count = self.min_response_bytes + int((num_of_coils-1)/8)
+        out_bytes = self._coils_vals_to_bytes(values)
+        byte_count = len(out_bytes)
 
         request = _num_to_two_bytes_str(start_coil_num)
         request += _num_to_two_bytes_str(num_of_coils)
-        request += _num_to_two_bytes_str(byte_count)
-        request += self._coils_vals_to_bytes(values)
+        request += bytes([byte_count])
+        request += out_bytes
 
-        return request, byte_count
+        return request, self.min_response_bytes
 
     def _coils_vals_to_bytes(self, values):
+        """converts coils values to bytes"""
+        if not values:
+            return bytes([0, 0])
 
-        bytes = ""
+        out_bytes = bytes([])
         byte = 0
         byte_iter = 7
+        full_byte = False
         for coil_val in values:
             if coil_val:
                 byte |= 1<<byte_iter
-
             byte_iter -= 1
             if byte_iter == -1:
-                bytes += chr(byte)
+                out_bytes += bytes([byte])
                 byte = 0
                 byte_iter = 7
 
-        return bytes.encode('utf-8')
+        if byte_iter < 7: #didn't iterated through whole byte
+
+            if len(out_bytes)%2:
+                out_bytes += bytes([byte])   # add pending byte
+            else:
+                out_bytes += bytes([byte, 0]) # add pennding byte and zero byte for odd len bytes
+        else:   #iterated through whole byte
+            if len(out_bytes)%2: #even number of whole bytes
+                out_bytes += bytes([0])   # add pending byte
+
+        return out_bytes
 
 class Modbus():
 
@@ -202,7 +225,7 @@ class Modbus():
             self.ctrl_pin = None
         
         try:
-            self.serial =  serial.Serial(port=self.port, baudrate=baudrate, timeout=0.02, parity=serial.PARITY_NONE, stopbits=1)
+            self.serial =  serial.Serial(port=self.port, baudrate=baudrate, timeout=0.1, parity=serial.PARITY_NONE, stopbits=1)
             self.connected = True
         except serial.SerialException:
             self.logger.error("Can't open port {}".format(self.port))
@@ -249,10 +272,11 @@ class Modbus():
 
         #check frame length
         if len(response) == 0:
+            #raise ValueError
             raise ValueError('Slave {} is not responding'.format(slave_address))
 
         if len(response) < function.min_response_bytes:
-            raise ValueError('Slave {} returns too short response: {!r}'.format(slave_address, response))
+            raise ValueError('Slave {} returns too short response: {!r}'.format(slave_address, pretty_hex(response)))
 
         #check checksum equility
         received_checksum = response[-Modbus.NUMBER_OF_CRC_BYTES:]
@@ -261,7 +285,7 @@ class Modbus():
 
         if received_checksum != calculated_checksum:
             template = 'Slave {} checksum error. \nRecived checksum {}\nExcepted checksum {}\nThe response is: {!r}\nLength: {}'
-            text = template.format(slave_address, received_checksum, calculated_checksum, response, len(response))
+            text = template.format(slave_address, received_checksum, calculated_checksum, pretty_hex(response), len(response))
             raise ValueError(text)
 
         # Check slave address
@@ -269,17 +293,17 @@ class Modbus():
 
         if response_address != slave_address:
             raise ValueError('Wrong return slave address: {} instead of {}. The response is: {!r}'.format( \
-                response_address, slave_address, response))
+                response_address, slave_address, pretty_hex(response)))
 
         # Check function code
         received_function_code = response[Modbus.BYTEPOSITION_FOR_FUNCTIONCODE]
 
         if received_function_code == self.__set_bit_on(function.code, Modbus.BITNUMBER_FUNCTIONCODE_ERRORINDICATION):
-            raise ValueError('Slave {} is indicating an error. The response is: {!r}'.format(slave_address, response))
+            raise ValueError('Slave {} is indicating an error. The response is: {!r}'.format(slave_address, pretty_hex(response)))
 
         elif received_function_code != function.code:
             raise ValueError('Slave {} wrong functioncode: {} instead of {}. The response is: {!r}'.format( \
-                slave_address, received_function_code, function.code, response))
+                slave_address, received_function_code, function.code, pretty_hex(response)))
 
     def __set_bit_on(self, val, bit_num):
         return val | (1 << bit_num)
@@ -293,5 +317,4 @@ class Modbus():
         for char in inputstring:
             register = (register >> 8) ^ Modbus._CRC16TABLE[(register ^ char) & 0xFF]
         return _num_to_two_bytes_str(register, LsbFirst=True)
-
 

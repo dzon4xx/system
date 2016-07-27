@@ -3,7 +3,7 @@ import threading
 import logging
 import os
 import time
-
+import queue
 class Communication_manager(threading.Thread):
     
     url = "ws://localhost:8888/websocket"

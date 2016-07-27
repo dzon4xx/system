@@ -59,11 +59,13 @@ class Regulation(Base_object):
     def proportional_control(self, ):
         ON = 1
         OFF = 0
+
         if not self.feed_val: # if sensor does not returns any valu - its val == None
             return OFF
 
         if self.feed_val < self.set_point:
             return ON
+
         else:
             return OFF
 

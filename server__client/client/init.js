@@ -162,6 +162,7 @@ $(document).ready(function () {
         auth.redirect_to_system();
     }
     else {
+        
         auth.redirect_to_login();
     }
 });

@@ -11,9 +11,9 @@ from common.color_logs import color_logs
 
 #zabezpieczyc bufory przed kolizja watkow. Tzn logika usuwa bufor a w tym samym czasie komunikacja pisze do buforu
 color_logs()
+modbus = Modbus_manager()
 communication = Communication_manager()
 logic = Logic_manager(args=(communication,))
-modbus = Modbus_manager()
 modbus.tasks = logic.tasks
 
 

@@ -25,7 +25,7 @@ class Modbus_manager(threading.Thread):
         self._db = create_db_object()
         self.logger = logging.getLogger('MODBUS_MAN')
 
-        self.modbus = Modbus(115200)
+        self.modbus = Modbus(250000)
         self.modbus.logger.disabled = False
         self.tasks = None # tasks are instantated by start script
 
@@ -42,21 +42,35 @@ class Modbus_manager(threading.Thread):
         for input_element in Input_element.items.values():
             Input_module.items[input_element.module_id].regs[input_element.reg_id] = input_element
 
+        #for output_element in Output_element.items.values():
+        #    Output_module.items[output_element.module_id].regs[input_element.reg_id] = input_element
 
     def _check_tasks(self, ):
-        for task in self.tasks:
-            if task.status == task_stat.new:
-                result = Output_module.items[task.out_element.module_id].write(element.port, element.desired_value)
-                if result:
-                    task.status = task_stat.done
-                    element.value = element.desired_value
-                    element.new_val_flag = True
+
+        output_module_to_write = dict() # dictionary for performing modbus write nad notifying output elements
+        while not self.tasks.empty():
+            output_element = self.tasks.get() # get output element form task queue
+            output_module = Output_module.items[output_element.module_id]
+            output_module.regs_values[output_element.reg_id]
+
+            if output_module not in output_module_to_write.keys():
+                output_module_to_write[output_module] = []
+                output_module_to_write[output_module].append(output_element)
+            else:
+                output_module_to_write[output_module].append(output_element)
+
+        for output_module, output_elements in output_module_to_write.items():
+            result = output_module.write()
+            if result:
+                for output_element in output_elements:
+                    output_element.new_val_flag = True
+                    output_element.value = output_element.desired_value
 
     def run(self, ):
         if (self.modbus.connected):
             time.sleep(1.5) # sleep to allow slaves to configure themselfs
             self.logger.info('Thread {} start'. format(self.name))
-            #bench = Benchmark()
+            bench = Benchmark()
             while True:
                 for input_module in Input_module.items.values(): # loop for every input module to get high response speed
                     self._check_tasks() #after every read of in_mod check if there is anything to write to out_mod
@@ -71,9 +85,9 @@ class Modbus_manager(threading.Thread):
                         self.logger.debug('New val: {}'.format(str(input_element)))
 
 
-                #lps = bench.loops_per_second()
-                #if lps:
-                    #self.logger.debug(lps)
+                lps = bench.loops_per_second()
+                if lps:
+                    self.logger.debug(lps)
         else:
             self.logger.error('Modbus connection error. Thread {} exits'.format(self.name))
 

@@ -144,19 +144,29 @@
 #    value = ord(byte_string[0])*256 + ord(byte_string[1])
 #    return value 
 
-from backend.modbus.modbus import Modbus
-from time import sleep
 from timeit import default_timer as t
-modbus = Modbus('COM7', 1000000)
+from time import sleep
 
 
-regs_to_write = [i for i in range(15)] 
-sleep(2)
-all_start = t()
-for i in range(10):
+
+min = 1
+max = 0
+num_of_empty_loops = 1700
+for j in range (1000):
     start = t()
-    a =  (modbus.read_regs(1, 0, 20))
-    print ('t: ', t()-start)
+    while t()-start < 9e-05:
+        pass
+
+    dur = t()-start
+
+    if dur < min: min = dur
+    if dur > max: max = dur
+
+min = min * 1000000
+max = max * 1000000
+
+print ('min: {}, max: {}'.format(min, max))
 
 
-print ('all: ', t()-all_start)
+
+
