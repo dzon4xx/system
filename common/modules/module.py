@@ -1,61 +1,71 @@
 from common.base_object import Base_object
-from enum import Enum
 from common.sys_types import mt, et
 from time import time 
+
+from functools import wraps
+
+
+def communication(func):
+    @wraps(func)
+    def func_wrapper(self, *args, **kwargs):
+        self.transmission_num += 1 #
+        result = func(self)
+
+        if result:    # if there is response from module
+            self.correct_trans_num += 1
+            return result
+        else:
+            self.available = False
+            self.courupted_trans_num += 1
+            #TODO notification about module failures
+            return result
+
+    return func_wrapper
 
 class Add_element_error(Exception):
     def __init__(self, msg):
         self.msg = msg
 
 class Module(Base_object):
+    table_name = 'modules'
     """System modules class"""
 
-    accepted_elements = {mt.input : [et.pir, et.rs],
-                        mt.output: [et.heater, et.led, et.ventilator, et.led, et.blind],
-                        mt.ambient: [et.ds, et.ls, et.dht_hum, et.dht_temp],
-                        mt.led_light: [et.led]}
-
-    input_modules = [mt.input, mt.ambient]
-
-    output_modules = [mt.led_light, mt.output]
-  
-    num_of_ports = {mt.input: 15,
-                 mt.ambient: 4,
-                 mt.led_light: 3,
-                 mt.output : 10}
-
-    num_of_regs_ambient = 19
-
+    types = set((mt.led_light, mt.output, mt.ambient, mt.input))
     ID = 0
-
     items = {}
     def __init__(self, *args):
         super().__init__(args[0], mt(args[1]), args[2])
         Module.items[self.id] = self 
-        self.num_of_ports = Module.num_of_ports[self.type]
         self.ports = {}
-        self.regs = {}
+        self.elements = {}
         self.modbus = None
 
         self.available = True
-        self.timer = 0
-        self.timeout = 0 
+        self.last_timeout = 0
+        self.timeout = 3 
         self.correct_trans_num = 0
-        self.tran_num = 0
+        self.transmission_num = 0
         self.courupted_trans_num = 0
 
     def is_available(self, ):
-        return self.available
+
+        if self.available:
+            return True
+
+        else:
+            if time() - self.last_timeout > self.timeout:
+                self.last_timeout = time()
+                self.available = True
+                return True
+            
+        return False
 
     def set_timeout(self, timeout):
 
         self.timeout = timeout
 
-        if time() - self.timer > self.timeout:
-            self.timer = time()
-            self.available = True
-        
 
+        
     def check_port_range(self, port):
         if port>self.num_of_ports-1 or port<0:
             raise Add_element_error('Port: ' + str(port) + ' out of range')
@@ -68,7 +78,7 @@ class Module(Base_object):
             pass
 
     def check_element_type(self, element):
-        if element.type not in Module.accepted_elements[self.type]:
+        if element.type not in self.accepted_elements:
             raise Add_element_error('Element: ' + element.type.name + ' is not valid for ' +self.type.name)
         
     def check_if_element_connected(self, element):
@@ -82,21 +92,169 @@ class Module(Base_object):
         self.check_if_element_connected(element)
 
         self.ports[port] = element
-        if element.type != et.blind:
-            element.module_id = self.id
+        element.reg_id = port
+        element.module_id = self.id
+        self.elements[element.id] = element
 
-    def __str__(self, ):
-        return "".join([super().__str__(), '\tFree ports:\t', ",".join([str(port_num) for port_num, port in enumerate(self.ports) if port==None])])
+class Input_module(Module):
+
+    types = set((mt.ambient, mt.input))
+    items = {}
+    def __init__(self, *args):
+        super().__init__(*args)
+        Input_module.items[self.id] =  self
+
+        self._read_freq = None
+
+    @property
+    def read_freq(self):
+        return self._read_freq
+
+    @read_freq.setter
+    def read_freq(self, value):
+        self._read_freq = value
+
+    @communication
+    def read(self,):
+        regs_values = self.modbus.read_regs(self.id, 0, self.num_of_regs)
+        
+        if regs_values:
+            for element in self.elements.values():
+                new_value = regs_values[element.reg_id]
+                if new_value != element.value:
+                    element.value = new_value
+                    element.new_val_flag = True       
+            return True
+
+        return False
+
+class Output_module(Module):
+
+    types = set((mt.led_light, mt.output))
+    items = {}
+    def __init__(self, *args):
+        super().__init__(*args)
+        Output_module.items[self.id] =  self
+        self.update = False
 
 
 
-    #def __str__(self):
-    #    return "".join([super().__str__(), '\nREGS:\n', "\n".join([str(element) for element in self.regs])])
+class Anfa_output(Output_module):
 
+    types = set((mt.output,))
 
+    num_of_ports = 10
+    num_of_regs = 10
+    accepted_elements = set((et.led, et.heater, et.ventilator, et.blind))
 
+    items = {}
+    def __init__(self, *args):
+        super().__init__(*args)
+        Anfa_output.items[self.id] = self 
+        self.values =  [ 0 for i in range(self.num_of_regs) ]
 
+    @communication
+    def write(self, ):
 
+        for element in self.elements.values():
+            if element.desired_value != element.value:   # element value needs to be updated
+                
+                self.values[element.reg_id] = element.desired_value
 
+        result = self.modbus.write_coils(self.id, 0, self.values)#TODO: write values
+
+        if result:
+            for element in self.elements.values():
+                element.value = element.desired_value   # element value is updated
+                element.is_new_val = True
+
+        return result
+
+class Anfa_led_light(Output_module):
+    
+    types = set((mt.led_light,))
+
+    num_of_ports = 3
+    num_of_regs = 3
+    accepted_elements = set((et.led,))
+
+    items = {}
+    def __init__(self, *args):
+        super().__init__(args[0], mt(args[1]), args[2])
+        Anfa_led_light.items[self.id] = self 
+        self.values =  [ 0 for i in range(self.num_of_regs) ]
+
+    @communication
+    def write(self, ):
+
+        for element in self.elements.values():
+            if element.desired_value != element.value:   # element value needs to be updated
+                self.values[element.reg_id] = element.desired_value
+
+        result = self.modbus.write_regs(self.id, 0, self.values)#TODO: write values
+
+        if result:
+            for element in self.elements.values():
+                element.desired_value = element.value   # element value is updated
+                element.is_new_val = True
+
+        return result
+
+class Anfa_ambient(Input_module):
+    
+    types = set((mt.ambient,))
+
+    num_of_ports = 4
+    num_of_regs = 19
+    accepted_elements = set((et.ds, et.dht_hum, et.dht_temp, et.ls,))
+
+    items = {}
+    def __init__(self, *args):
+        Input_module.__init__(self, *args)
+        Anfa_ambient.items[self.id] =  self
+        self.ds18b20_counter = 0
+    
+    def add_element(self, port, element):
+        """For anfa ambient ports are not the same as registers. ds18b20 sensors are all working on one port"""
+        self.check_element_type(element)
+        self.check_port_range(port)
+        self.check_if_element_connected(element)
+        try:
+            if self.ports[port]:    #Check if something is already on the port
+                if self.ports[port].type == et.ds:  # If on this port is ds18b20 
+                    if element.type == et.ds:   # And user wants to connect another ds18b20
+                        pass # everything is fine
+                    else:
+                        raise Add_element_error('Port: ' + port + ' in use') # raise error
+        except KeyError:           
+            self.ports[port] = element # Add element to port
+
+        if element.type == et.ls: # dodanie elementu do rejestru
+            element.reg_id = 0
+        elif element.type == et.dht_temp:
+            element.reg_id = 1
+        elif element.type == et.dht_hum:
+            element.reg_id = 2
+        elif element.type == et.ds:
+            element.reg_id = 3 + self.ds18b20_counter
+            self.ds18b20_counter += 1
+       
+        element.module_id = self.id
+        self.elements[element.id] = element
+
+class Anfa_input(Input_module):
+
+    types = set((mt.input,))
+
+    num_of_ports = 15
+    num_of_regs = 15
+    accepted_elements = set((et.pir, et.rs, et.switch,))
+
+    items = {}
+    def __init__(self, *args):
+        Input_module.__init__(self, *args)
+        Anfa_input.items[self.id] = self
+
+        
 
 
