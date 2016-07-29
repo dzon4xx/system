@@ -117,10 +117,24 @@ class Database:
         return self.cur.fetchall()
 
     def load_objects_from_table(self, Object):
+
         table = self.get_table(Object)
-        for data in table:
-            data = list(data)
-            Object(*data)
+
+        try:
+            types = Object.types.copy()
+            num_types = set()
+
+            while types:
+                num_types.add(types.pop().value) # convert enums to ints
+
+            for data in table:
+                if data[1] in num_types: # if type of object match with requierd type
+                    data = list(data)
+                    Object(*data)   # create Object
+        except AttributeError: 
+            for data in table: # simple load for objects without type
+                data = list(data)
+                Object(*data)   # create Object
 
     @read_remove
     def delete_tables(self, *Objects):
