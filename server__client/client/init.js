@@ -141,12 +141,12 @@ function system_init() {
             element.innerText = value;
         }
         else if (action == 's') {
-            if (value == 1){
+            if (value == 2){
                 $(element).addClass("on");
                 $(element).removeClass("off");
                 log('class on');
             }
-            else if (value == 0) {
+            else if (value == 1) {
                 $(element).removeClass("on");
                 $(element).addClass("off");
                 log('class off');
