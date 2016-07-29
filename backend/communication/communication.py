@@ -11,8 +11,8 @@ class Communication_manager(threading.Thread):
     def __init__(self, group=None, target=None, name=None, args=(), kwargs=None, verbose=None):
         threading.Thread.__init__(self, group=group, target=target, name='COM')
         self.logger = logging.getLogger('COM')
-        self.in_buffer = set()
-        self.out_buffer = set()
+        self.in_buffer = queue.Queue(100)
+        self.out_buffer = queue.Queue(100)
 
         self.msg = None # msg from websocet
 
@@ -36,10 +36,9 @@ class Communication_manager(threading.Thread):
             try:
                 while True:
                     time.sleep(0.1)
-                    if self.in_buffer:
-                        while self.in_buffer:
-                            msg = self.in_buffer.pop()
-                            self.conn.send(msg)
+                    while not self.in_buffer.empty():
+                        msg = self.in_buffer.get()
+                        self.conn.send(msg)
             
             except websocket.WebSocketConnectionClosedException:
                 self.logger.error("Websocet disconnected")
@@ -49,7 +48,7 @@ class Communication_manager(threading.Thread):
     def listen_ws(self, ):
         while True:
             self.msg = self.conn.recv()
-            self.out_buffer.add(self.msg)
+            self.out_buffer.put(self.msg)
             #self.logger.debug(self.msg)
 
 
