@@ -8,12 +8,9 @@ else:
 
 from timeit import default_timer as t
 
-
 import serial
 import logging
 from functools import wraps
-
-
 
 def _list_to_byte_string(list):
                
@@ -70,10 +67,11 @@ def run_fun(func):
         if is_RPI: GPIO.output( self.modbus.ctrl_pin, True)   # Write mode
         while t() - self.modbus.sleep_timer < self.modbus.t_3_5:
             pass # force 3.5char sleep time
-
+        #print(pretty_hex(request))
         self.modbus.serial.write(request)
         if is_RPI: GPIO.output( self.modbus.ctrl_pin, False)   # Listen mode 
         response = self.modbus.serial.read(num_of_bytes_to_read)
+        #print(pretty_hex(response))
         self.modbus.sleep_timer = t()
         return response
             
@@ -148,16 +146,16 @@ class Write_coils_function():
 
         out_bytes = bytes([])
         byte = 0
-        byte_iter = 7
+        byte_iter = 0
         full_byte = False
         for coil_val in values:
             if coil_val:
                 byte |= 1<<byte_iter
-            byte_iter -= 1
-            if byte_iter == -1:
+            byte_iter += 1
+            if byte_iter == 8:
                 out_bytes += bytes([byte])
                 byte = 0
-                byte_iter = 7
+                byte_iter = 0
 
         if byte_iter < 7: #didn't iterated through whole byte
 
@@ -209,6 +207,7 @@ class Modbus():
 
     def __init__(self, baudrate):
         self.logger = logging.getLogger('MODBUS')
+
         self.baudrate = baudrate
         self.connected = False
         self.port = ""
@@ -225,7 +224,7 @@ class Modbus():
             self.ctrl_pin = None
         
         try:
-            self.serial =  serial.Serial(port=self.port, baudrate=baudrate, timeout=0.1, parity=serial.PARITY_NONE, stopbits=1)
+            self.serial =  serial.Serial(port=self.port, baudrate=baudrate, timeout=0.02, parity=serial.PARITY_NONE, stopbits=1)
             self.connected = True
         except serial.SerialException:
             self.logger.error("Can't open port {}".format(self.port))
@@ -275,7 +274,7 @@ class Modbus():
             #raise ValueError
             raise ValueError('Slave {} is not responding'.format(slave_address))
 
-        if len(response) < function.min_response_bytes:
+        if len(response) < 5:
             raise ValueError('Slave {} returns too short response: {!r}'.format(slave_address, pretty_hex(response)))
 
         #check checksum equility
@@ -317,4 +316,3 @@ class Modbus():
         for char in inputstring:
             register = (register >> 8) ^ Modbus._CRC16TABLE[(register ^ char) & 0xFF]
         return _num_to_two_bytes_str(register, LsbFirst=True)
-
