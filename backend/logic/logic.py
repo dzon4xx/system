@@ -4,8 +4,9 @@ import time
 import queue
 
 from common.elements.element import Element
-from common.elements.input_element import Input_element
-from common.elements.output_element import Output_element
+from common.elements.element import Input_element, Output_element, Blind
+from common.modules.module import Output_module
+
 from common.elements.clock import clock
 
 from common.relations.dependancy import Dependancy
@@ -25,14 +26,19 @@ class Logic_manager(threading.Thread):
         self.__comunication = args[0]
         self.__db = create_db_object()
         self.logger = logging.getLogger('LOGIC')
-
-        self.tasks = queue.Queue()
+        self.tasks = set()
 
         self.__setup()
 
     def __setup(self, ):
         self.__db.load_objects_from_table(Input_element)
         self.__db.load_objects_from_table(Output_element)
+        self.__db.load_objects_from_table(Blind)
+
+        for blind in Blind.items.values():
+            other_blind_id  =   blind.other_blind
+            blind.other_blind = Blind.items[other_blind_id]
+
         self.__db.load_objects_from_table(Dependancy)
         self.__db.load_objects_from_table(Regulation)
    
@@ -45,31 +51,28 @@ class Logic_manager(threading.Thread):
 
     def __check_com_buffer(self, ):
         """Sprawdz bufor komunikacyjny jesli pelny to ustaw desired value"""
-        if self.__comunication.out_buffer:
-            for msg in self.__comunication.out_buffer:
-                type, id, value = self.__process_msg(msg)
-                if type == 'e':
-                    Output_element.items[id].set_desired_value(0, value) # priorytet wiadomosci od klienta jest najwyzszy - 0. 
-                    #self.logger.debug('Set desired value el: %s val: %s', id, value)
-                elif type == 'r':
-                    Regulation.items[id].set_point = value
+        while not self.__comunication.out_buffer.empty():
+            msg = self.__comunication.out_buffer.get()             
+            type, id, value = self.__process_msg(msg)
+            if type == 'e':
+                Output_element.items[id].set_desired_value(0, value) # priorytet wiadomosci od klienta jest najwyzszy - 0. 
+                #self.logger.debug('Set desired value el: %s val: %s', id, value)
+            elif type == 'r':
+                Regulation.items[id].set_point = value
             self.logger.debug(Output_element.elements_str())
-
-            #tutaj zalozyc locka zeby komunikacja nie pisala
-            self.__comunication.out_buffer = set() # wyczysc bufor
 
     def __check_elements_values_and_notify(self, ):
         """Sprawdza czy modbus ustawil stany elementow"""
         clock.evaluate_time()
         for element in Element.items.values():
             if element.new_val_flag:
-                element.notify_objects() # powiadamia zainteresowane obiekty
                 element.new_val_flag = False
+                element.notify_objects() # powiadamia zainteresowane obiekty
                 if element.type in (et.pir, et.rs, et.switch, et.heater):
                     msg = 'e' + str(element.id) + ',' + str(element.value) + ',' + 's'
                 else:
                     msg = 'e' + str(element.id) + ',' + str(element.value) 
-                self.__comunication.in_buffer.add(msg)
+                self.__comunication.in_buffer.put(msg)
 
     def __evaluate_relations_and_set_des_values(self, ):
         """Sprawdza zaleznosci i regulacje. jesli sa spelnione to wysyla sterowanie"""
@@ -84,9 +87,14 @@ class Logic_manager(threading.Thread):
             reg.run()
 
     def __generate_new_tasks(self,):
+        """Generates queue with modules which have elements with changed value"""
+        modules_to_notify = set()
         for out_element in Output_element.items.values():
             if out_element.value != out_element.desired_value:
-                self.tasks.put_nowait(out_element)
+                #print(out_element)
+                modules_to_notify.add(Output_module.items[out_element.module_id])
+        while modules_to_notify:
+            self.tasks.add(modules_to_notify.pop())
 
     def run(self, ):
         self.logger.info('Thread {} start'. format(self.name))
