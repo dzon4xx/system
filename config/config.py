@@ -1,13 +1,10 @@
 import sys
 import logging
 
-from common.elements.element import Element
-from common.elements.input_element import Input_element
-from common.elements.output_element import Blind, Output_element
-from common.modules.input_module import Input_module
-from common.modules.anfa_ambient import Anfa_ambient
-from common.modules.output_module import Output_module 
-from common.modules.module import Module, Add_element_error
+from common.elements.element import Element, Input_element, Output_element, Blind
+
+from common.modules.module import Module, Anfa_output, Anfa_led_light, Anfa_ambient, Anfa_input, Add_element_error
+
 from common.relations.dependancy import Dependancy, Dependancy_config_error
 from common.relations.regulation import Regulation, Regulation_config_error
 from server__client.server.models.room import Room
@@ -22,7 +19,7 @@ class System_creator():
     
     def __init__(self):
         self.db = create_db_object()
-        self.db.logger.disabled = False
+        self.db.logger.disabled = True
         self.logger = logging.getLogger('CONF')
         self.room_id    = 0
         self.element_id = 0
@@ -33,25 +30,19 @@ class System_creator():
     def create_tables(self, ):
 
         self.db.create_tables(Element,
-                             Input_element,                               
-                             Output_element, 
-                             Input_module, 
-                             Output_module, 
+                              Blind,
+                             Module, 
                              Room,
                              Dependancy,
-                             Regulation, 
-                             User)
+                             Regulation, )
 
     def delete_tables(self, ):
             self.db.delete_tables(Element,
-                             Input_element,                               
-                             Output_element, 
-                             Input_module, 
-                             Output_module, 
+                             Blind,
+                             Module, 
                              Room,
                              Dependancy,
-                             Regulation, 
-                             User)
+                             Regulation, )
 
     def add_room(self, type = None, name = ''):      
         room = Room(self.room_id ,type, name, [], [])
@@ -60,13 +51,15 @@ class System_creator():
 
     def add_module(self, type = None, name = ''):
      
-        if type in Module.input_modules:
-            if type == mt.ambient:
-                module = Anfa_ambient(self.module_id, type, name)
-            else:
-                module = Input_module(self.module_id, type, name)
-        else:
-            module = Output_module(self.module_id, type, name)
+        if type == mt.ambient:
+            module = Anfa_ambient(self.module_id, type, name)
+        elif type == mt.input:
+            module = Anfa_input(self.module_id, type, name)
+        elif type == mt.output:
+            module = Anfa_output(self.module_id, type, name)
+        elif type == mt.led_light:
+            module = Anfa_led_light(self.module_id, type, name)
+
         self.module_id += 1       
         self.logger.info('Created module: ' + str(module))
               
@@ -77,31 +70,36 @@ class System_creator():
 
         try:
             if type == et.dht:
-                el1= Input_element(self.element_id, et.dht_hum, 'Humidity', module_id, port)
+                el1= Element(self.element_id, et.dht_hum, 'Humidity', module_id, port)
                 self.element_id += 1
-                el2 = Input_element(self.element_id, et.dht_temp, 'Temperature', module_id, port)
+                el2 = Element(self.element_id, et.dht_temp, 'Temperature', module_id, port)
                 self.element_id += 1
                 Module.items[module_id].add_element(port, el1)
                 Module.items[module_id].add_element(port, el2)
                 Room.items[room_id].add_element(el1, el2)
 
             elif type == et.blind:
-                blind_ports   = (port[0]<<4) + port[1]    # kodowanie w jednej liczbie dwoch portow
-                blind_modules = (module_id[0]<<4) + module_id[1] # kodowanie w jednej liczbie dwoch modulow
-                el = Blind(self.element_id, et.blind, name, blind_modules, blind_ports)
+
+                blind_up = Blind(self.element_id, et.blind, name, module_id[0], port[0], 'up', None)
                 self.element_id += 1
-                Room.items[room_id].add_element(el)
-                Module.items[module_id[0]].add_element(port[0], el)
-                Module.items[module_id[1]].add_element(port[1], el)
+                blind_down = Blind(self.element_id, et.blind, name, module_id[1], port[1], 'down', None)
+                self.element_id += 1
+
+                blind_up.other_blind = blind_down.id
+                blind_down.other_blind = blind_up.id
+                
+                Room.items[room_id].add_element(blind_up, blind_down)
+                Module.items[module_id[0]].add_element(port[0], blind_up)
+                Module.items[module_id[1]].add_element(port[1], blind_down)
 
             elif type in Input_element.types:
-                el = Input_element(self.element_id, type, name, module_id, port)
+                el = Element(self.element_id, type, name, module_id, port)
                 self.element_id += 1
                 Room.items[room_id].add_element(el)
                 Module.items[module_id].add_element(port, el)
 
             elif type in Output_element.types:
-                el = Output_element(self.element_id, type, name, module_id, port)
+                el = Element(self.element_id, type, name, module_id, port)
                 self.element_id += 1
                 Room.items[room_id].add_element(el)
                 Module.items[module_id].add_element(port, el)
@@ -133,6 +131,9 @@ class System_creator():
              reg_type = regt.hum
              assert Element.items[out_el_id].type == et.ventilator
 
+        else:
+            raise Regulation_config_error('REGULATION ERROR Feed element: ' + (feed_el_id) + " not in defined input elements")
+
         if name == '':
             name = 'regulation ' + str(Regulation.ID)
         try:
@@ -156,15 +157,8 @@ class System_creator():
 
     def __save_modules(self, ):
         for module in Module.items.values():
-            if module.type == mt.ambient:
-                self.db.save(Input_module, (module.id, module.type.value, module.name, ))
-            
-            elif module.type in Module.input_modules:
-                self.db.save(Input_module, (module.id, module.type.value, module.name, ))
-            
-            elif module.type in Module.output_modules:
-                self.db.save(Output_module, (module.id, module.type.value, module.name, ))
-            
+            self.db.save(Module, (module.id, module.type.value, module.name, ))            
+                       
     def __save_rooms(self, ):
         for room in Room.items.values():
             els = ",".join([str(element.id) for element in room.elements])
@@ -174,10 +168,8 @@ class System_creator():
     def __save_elements(self, ):
         for element in Element.items.values():
             self.db.save(Element, (element.id, element.type.value, element.name, element.module_id, element.reg_id))
-            if element.type in Input_element.types:
-                self.db.save(Input_element, (element.id, element.type.value, element.name, element.module_id, element.reg_id))
-            elif element.type in Output_element.types:
-                self.db.save(Output_element, (element.id, element.type.value, element.name, element.module_id, element.reg_id))
+        for blind in Blind.items.values():           
+            self.db.save(Blind, (blind.id, blind.type.value, blind.name, blind.module_id, blind.reg_id, blind.direction, blind.other_blind))
 
     def __save_dependancies(self, ):
         for dep in Dependancy.items.values():
@@ -251,153 +243,153 @@ system.add_element(type = et.blind,
                     name = 'Blind',
                     room_id = 1,
                     module_id = [2, 2],
-                    port =   [1, 2])#7
+                    port =   [1, 2])#7 8
 system.add_element(type = et.pir, 
                     name = 'Motion',
                     room_id = 1,
                     module_id = 1,
-                    port =   1)#8
+                    port =   1)#9
 system.add_element(type = et.rs, 
                     name = 'RS window',
                     room_id = 1,
                     module_id = 1,
-                    port =   2)#9
+                    port =   2)#10
 system.add_element(type = et.switch,
                    name = 'Switch',
                    room_id = 1,
                    module_id = 1,
-                   port = 10)#10
+                   port = 10)#11
 
 # id 2
 system.add_element(type = et.ds, 
                     name = 'Temperature',
                     room_id = 2,
                     module_id = 4,
-                    port =   1)#11
+                    port =   1)#12
 system.add_element(type = et.heater, 
                     name = 'Heater',
                     room_id = 2,
                     module_id = 2,
-                    port =   3)#12
+                    port =   3)#13
 system.add_element(type = et.led, 
                     name = 'Led strip',
                     room_id = 2,
                     module_id = 3,
-                    port =   1)#13
+                    port =   1)#14
 system.add_element(type = et.switch,
                    name = 'Switch',
                    room_id = 2,
                    module_id = 1,
-                   port = 11)#14
+                   port = 11)#15
 system.add_element(type = et.pir, 
                     name = 'Motion',
                     room_id = 2,
                     module_id = 1,
-                    port =   14)#15
+                    port =   14)#16
 
 # id 3
 system.add_element(type = et.ds, 
                     name = 'Temperature',
                     room_id = 3,
                     module_id = 4,
-                    port =   1)#16
+                    port =   1)#17
 system.add_element(type = et.pir, 
                     name = 'Motion',
                     room_id = 3,
                     module_id = 1,
-                    port =   3)#17
+                    port =   3)#18
 
 # id 4
 system.add_element(type = et.ds, 
                     name = 'Temperature',
                     room_id = 4,
                     module_id = 4,
-                    port =   1)#18
+                    port =   1)#19
 system.add_element(type = et.heater, 
                     name = 'Heater',
                     room_id = 4,
                     module_id = 2,
-                    port =   4)#19
+                    port =   4)#20
 system.add_element(type = et.led, 
                     name = 'Led strip',
                     room_id = 4,
                     module_id = 3,
-                    port =   2)#20
+                    port =   2)#21
 system.add_element(type = et.blind, 
                     name = 'Blind',
                     room_id = 4,
                     module_id = [2, 2],
-                    port =   [5, 6])#21
+                    port =   [5, 6])#22 23
 system.add_element(type = et.switch,
                    name = 'Switch',
                    room_id = 4,
                    module_id = 1,
-                   port = 12)#22
+                   port = 12)#24
 system.add_element(type = et.pir, 
                     name = 'Motion',
                     room_id = 4,
                     module_id = 1,
-                    port =   4)#23
+                    port =   4)#25
 system.add_element(type = et.rs, 
                     name = 'RS window',
                     room_id = 4,
                     module_id = 1,
-                    port =   5)#24
+                    port =   5)#26
 
 # id 5
 system.add_element(type = et.ds, 
                     name = 'Temperature',
                     room_id = 5,
                     module_id = 4,
-                    port =   1)#25
+                    port =   1)#27
 system.add_element(type = et.heater, 
                     name = 'Heater',
                     room_id = 5,
                     module_id = 2,
-                    port =   7)#26
+                    port =   7)#28
 system.add_element(type = et.blind, 
                     name = 'Blind',
                     room_id = 5,
                     module_id = [2, 2],
-                    port =   [8, 9])#27
+                    port =   [8, 9])#29 30
 system.add_element(type = et.switch,
                    name = 'Switch',
                    room_id = 5,
                    module_id = 1,
-                   port = 13)#27
+                   port = 13)#31
 system.add_element(type = et.pir, 
                     name = 'Motion',
                     room_id = 5,
                     module_id = 1,
-                    port =   6)#28
+                    port =   6)#32
 system.add_element(type = et.rs, 
-                    name = 'RS Window',
+                    name = 'RS window',
                     room_id = 5,
                     module_id = 1,
-                    port =   7)#29
+                    port =   7)#33
 
 #id 6
 system.add_element(type = et.ds, 
                     name = 'Temperature',
                     room_id = 6,
                     module_id = 4,
-                    port =   1)#30
+                    port =   1)#34
 system.add_element(type = et.ls, 
                     name = 'Light level',
                     room_id = 6,
                     module_id = 4,
-                    port =   2)#31
+                    port =   2)#35
 system.add_element(type = et.rs, 
                     name = 'RS Main doors',
                     room_id = 6,
                     module_id = 1,
-                    port =   8)#32
+                    port =   8)#36
 
-system.add_dependancy('wlaczanie swiatla w lazience', '[e3=1] then e2=100; e2=0{100};') #light tunr on for 100s after pir detection
+#system.add_dependancy('wlaczanie swiatla w lazience', '[e3=1] then e2=100; e2=0{100};') #light tunr on for 100s after pir detection
 system.add_regulation('Temp set', feed_el_id=5, out_el_id=6, set_point=20, dev=2) # room 1 heating
-system.add_regulation('Temp set', feed_el_id=11, out_el_id=12, set_point=20, dev=2)# room 2 heating
-system.add_regulation('Temp set', feed_el_id=18, out_el_id=19, set_point=20, dev=2)# room 4 heating
-system.add_regulation('Temp set', feed_el_id=25, out_el_id=26, set_point=20, dev=2)#room 5 heating
+#system.add_regulation('Temp set', feed_el_id=11, out_el_id=12, set_point=20, dev=2)# room 2 heating
+#system.add_regulation('Temp set', feed_el_id=18, out_el_id=19, set_point=20, dev=2)# room 4 heating
+#system.add_regulation('Temp set', feed_el_id=25, out_el_id=26, set_point=20, dev=2)#room 5 heating
 
 print("\n")
 system.save()
