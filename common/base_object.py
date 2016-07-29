@@ -11,7 +11,7 @@ class Base_object(object):
 
    def __str__(self, ):
         """Representation of object"""
-        return "".join(["ID: ",str(self.id),"\ttype: ", self.type.name, "\tname:", self.name])
+        return "".join(["ID: ",str(self.id),"\ttype: ", self.type.name, "\tname: ", self.name])
 
    def __repr__(self,):
        return "".join(["ID: ",str(self.id)," type: ", self.type.name])

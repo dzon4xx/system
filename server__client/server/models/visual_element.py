@@ -75,9 +75,8 @@ class Visual_element(Base_object):
 
     @field
     def blind(self, ):
-        btn_up = button('up', type="button", cls='btn btn-md btn-primary', onclick = self.__send_function(100))
-        btn_down = button('down', type="button", cls='btn btn-md btn-primary', onclick = self.__send_function(0))         
-        return btn_up, btn_down
+        btn_up = button('up', type="button", cls='btn btn-md btn-primary', onclick = self.__send_function(1))        
+        return btn_up
 
     def __send_val(self, ):
         return self.__send_function("$(#input"  + str(self.id)+")" + ".val()")

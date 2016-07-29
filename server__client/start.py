@@ -15,7 +15,6 @@ from server.models.system_representation import load_system_representation
 
 from common.color_logs import color_logs
 
-access_log.disabled = False
 
 
 def load_routers():
@@ -50,6 +49,9 @@ def load_app(port, root):
 
 
 if __name__ == "__main__":
+
+    access_log.disabled = False
+
 
     color_logs()
     root = path.dirname(__file__)

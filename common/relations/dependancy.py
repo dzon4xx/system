@@ -1,10 +1,8 @@
 import operator
 import time
 
-from common.elements.element import Element
+from common.elements.element import Element, Input_element, Output_element
 from common.elements.clock import clock
-from common.elements.input_element import Input_element
-from common.elements.output_element import Output_element
 
 from common.sys_types import effect_status
 

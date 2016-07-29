@@ -4,7 +4,7 @@ from server__client.server.models.visual_element import Visual_element
 
 socket_logger = logging.getLogger('WS')
 socket_logger.disabled = False
-socket_logger.setLevel("DEBUG")
+socket_logger.setLevel("INFO")
 
 class Websocket(WebSocketHandler):
 

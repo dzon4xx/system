@@ -56,7 +56,7 @@ class Room(Base_object):
             r = div(cls='row')
             with r:
                 for group in row:
-                    div(cls="col-lg-4 group").add(group.get_html())
+                    div(cls="col-sm-4 group").add(group.get_html())
             room_container.add(r)
         return room_container.render()
 
