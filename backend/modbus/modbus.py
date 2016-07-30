@@ -1,10 +1,7 @@
-import os
-if os.name == 'posix':
-    is_RPI = True
-    import RPi.GPIO as GPIO
+from common.check_host import is_RPI
 
-else:
-    is_RPI = False
+if is_RPI:
+    import RPi.GPIO as GPIO
 
 from timeit import default_timer as t
 
@@ -64,12 +61,11 @@ def run_fun(func):
         fun_request_part, num_of_bytes_to_read = func(self, slave_address, *args) # function specific part of request
         request += fun_request_part
         request += self.modbus._calculate_crc(request)
-        if is_RPI: GPIO.output( self.modbus.ctrl_pin, True)   # Write mode
+        
         while t() - self.modbus.sleep_timer < self.modbus.t_3_5:
             pass # force 3.5char sleep time
         #print(pretty_hex(request))
         self.modbus.serial.write(request)
-        if is_RPI: GPIO.output( self.modbus.ctrl_pin, False)   # Listen mode 
         response = self.modbus.serial.read(num_of_bytes_to_read)
         #print(pretty_hex(response))
         self.modbus.sleep_timer = t()
@@ -169,6 +165,7 @@ class Write_coils_function():
 
         return out_bytes
 
+
 class Modbus():
 
     _CRC16TABLE = (
@@ -211,14 +208,13 @@ class Modbus():
         self.baudrate = baudrate
         self.connected = False
         self.port = ""
-        self.t_3_5 = 1e-3#(1/baudrate)*9*3.5 # 9 bits per charater. 3.5 characters time sleep
+        self.t_3_5 = 2e-3#(1/baudrate)*9*3.5 # 9 bits per charater. 3.5 characters time sleep
         self.sleep_timer = 0
+        self.correct_frames = 0
+        self.corrupted_frames = 0
+
         if is_RPI:
-            GPIO.setmode(GPIO.BCM)
-            self.ctrl_pin = 10
-            GPIO.setup(self.ctrl_pin, GPIO.OUT)
-            GPIO.output(self.ctrl_pin, False)   # listen mode
-            self.port = "/dev/ttyAMA0"
+            self.port = "/dev/ttyUSB0"
         else:
             self.port = "COM4"
             self.ctrl_pin = None
@@ -240,8 +236,10 @@ class Modbus():
             self._validate_response(slave_address, response, self.write_regs_obj)
         except ValueError as e:
             self.logger.debug(e)
+            self.corrupted_frames += 1
             return False
         else:
+            self.correct_frames += 1
             return True
 
     def write_coils(self, slave_address, start_coil_num, values):

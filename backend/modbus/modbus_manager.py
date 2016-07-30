@@ -22,7 +22,7 @@ class Modbus_manager(threading.Thread):
         self._db = create_db_object()
         self.logger = logging.getLogger('MODBUS_MAN')
 
-        self.modbus = Modbus(250000)
+        self.modbus = Modbus(38400)
 
         self.tasks = None # tasks are instantated by start script
 
@@ -75,7 +75,6 @@ class Modbus_manager(threading.Thread):
                         input_element.new_val_flag = True
                         self.logger.debug('New val: {}'.format(str(input_element)))
                         input_element.prev_value = input_element.value
-
                 lps = bench.loops_per_second()
 
         else:

@@ -7,6 +7,7 @@ from common.elements.element import Element
 from common.elements.element import Input_element, Output_element, Blind
 from common.modules.module import Output_module
 
+
 from common.elements.clock import clock
 
 from common.relations.dependancy import Dependancy
@@ -32,15 +33,18 @@ class Logic_manager(threading.Thread):
 
     def __setup(self, ):
         self.__db.load_objects_from_table(Input_element)
+
+
         self.__db.load_objects_from_table(Output_element)
+        self.__db.load_objects_from_table(Dependancy)
+        self.__db.load_objects_from_table(Regulation)
         self.__db.load_objects_from_table(Blind)
 
         for blind in Blind.items.values():
             other_blind_id  =   blind.other_blind
             blind.other_blind = Blind.items[other_blind_id]
 
-        self.__db.load_objects_from_table(Dependancy)
-        self.__db.load_objects_from_table(Regulation)
+
    
     def __process_msg(self, msg):
         msg = msg.split(',')

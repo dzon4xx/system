@@ -1,6 +1,7 @@
 import time
 import threading
 import logging
+from common.check_host import is_RPI
 #import ptvsd
 #tcp://backend@localhost:8082
 #ptvsd.enable_attach(secret="backend", address = ('127.0.0.1', 8082))
@@ -11,6 +12,9 @@ from backend.modbus.modbus_manager import Modbus_manager
 from common.color_logs import color_logs
 
 #zabezpieczyc bufory przed kolizja watkow. Tzn logika usuwa bufor a w tym samym czasie komunikacja pisze do buforu
+if is_RPI:
+    time.sleep(3)
+
 color_logs()
 communication = Communication_manager()
 logic = Logic_manager(args=(communication,))

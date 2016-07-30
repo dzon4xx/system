@@ -33,7 +33,6 @@ class Benchmark():
              self.min_lt = lt
         if lt > self.max_lt:
             self.max_lt = lt
-            print (self.max_lt)
         if t() - self.lps_timer >= 1:
             self.lps_timer = t()
             lps = (self.counter)
