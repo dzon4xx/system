@@ -387,9 +387,9 @@ system.add_element(type = et.rs,
 
 #system.add_dependancy('wlaczanie swiatla w lazience', '[e3=1] then e2=100; e2=0{100};') #light tunr on for 100s after pir detection
 system.add_regulation('Temp set', feed_el_id=5, out_el_id=6, set_point=20, dev=2) # room 1 heating
-#system.add_regulation('Temp set', feed_el_id=11, out_el_id=12, set_point=20, dev=2)# room 2 heating
-#system.add_regulation('Temp set', feed_el_id=18, out_el_id=19, set_point=20, dev=2)# room 4 heating
-#system.add_regulation('Temp set', feed_el_id=25, out_el_id=26, set_point=20, dev=2)#room 5 heating
+system.add_regulation('Temp set', feed_el_id=12, out_el_id=13, set_point=20, dev=2)# room 2 heating
+system.add_regulation('Temp set', feed_el_id=19, out_el_id=20, set_point=20, dev=2)# room 4 heating
+system.add_regulation('Temp set', feed_el_id=27, out_el_id=28, set_point=20, dev=2)#room 5 heating
 
 print("\n")
 system.save()
