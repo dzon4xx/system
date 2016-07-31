@@ -1,6 +1,6 @@
 import logging
 import time
-from time import clock as t
+from timeit import default_timer as t
 
 class Benchmark():
 
@@ -38,7 +38,11 @@ class Benchmark():
             lps = (self.counter)
             self.counter = 0
             #self.logger.info('Loops per second: {}\n Min loop time {} Max predicted loops: {}\n Max loop time {} Min predicted loops: {}'.format(lps, self.min_lt, int(1/self.min_lt),self.max_lt, int(1/self.max_lt)))
-            return lps
+            self.logger.info('Loops per second: {}\n Min loop time {} \n Max loop time {} '.format(lps, self.min_lt, self.max_lt))
+
+            return True
+        else:
+            return False
 
 
 if __name__ == "__main__":
