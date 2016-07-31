@@ -45,8 +45,8 @@ class Modbus_manager(threading.Thread):
     def _check_tasks(self, ):
 
         not_done_tasks = set()
-        while self.tasks:
-            output_module = self.tasks.pop() # get output element form task queue
+        while not self.tasks.empty():
+            output_module = self.tasks.get() # get output element form task queue
             output_module.write()
 
         #    if output_module.is_available():
@@ -61,7 +61,7 @@ class Modbus_manager(threading.Thread):
 
     def run(self, ):
         if (self.modbus.connected):
-            time.sleep(1.5) # sleep to allow slaves to configure themselfs
+            time.sleep(0.5) # sleep to allow slaves to configure themselfs
             self.logger.info('Thread {} start'. format(self.name))
             bench = Benchmark()
             while True:
@@ -69,13 +69,15 @@ class Modbus_manager(threading.Thread):
                     self._check_tasks() #after every read of in_mod check if there is anything to write to out_mod
                     if input_module.is_available():
                         input_module.read() # reds values and sets them to elements
-                        pass
+                        
                 for input_element in Input_element.items.values():
                     if input_element.prev_value != input_element.value:
                         input_element.new_val_flag = True
-                        self.logger.debug('New val: {}'.format(str(input_element)))
+                        #self.logger.debug('New val: {}'.format(str(input_element)))
                         input_element.prev_value = input_element.value
-                lps = bench.loops_per_second()
+                is_second_passed = bench.loops_per_second()
+                #if is_second_passed:
+                #    self.modbus.debug()
 
         else:
             self.logger.error('Modbus connection error. Thread {} exits'.format(self.name))

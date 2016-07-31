@@ -27,18 +27,18 @@ class Logic_manager(threading.Thread):
         self.__comunication = args[0]
         self.__db = create_db_object()
         self.logger = logging.getLogger('LOGIC')
-        self.tasks = set()
+        self.tasks = queue.Queue()
 
         self.__setup()
 
     def __setup(self, ):
         self.__db.load_objects_from_table(Input_element)
 
-
         self.__db.load_objects_from_table(Output_element)
+        self.__db.load_objects_from_table(Blind)
+
         self.__db.load_objects_from_table(Dependancy)
         self.__db.load_objects_from_table(Regulation)
-        self.__db.load_objects_from_table(Blind)
 
         for blind in Blind.items.values():
             other_blind_id  =   blind.other_blind
@@ -60,7 +60,7 @@ class Logic_manager(threading.Thread):
             type, id, value = self.__process_msg(msg)
             if type == 'e':
                 Output_element.items[id].set_desired_value(0, value) # priorytet wiadomosci od klienta jest najwyzszy - 0. 
-                #self.logger.debug('Set desired value el: %s val: %s', id, value)
+                self.logger.debug('Set desired value el: %s val: %s', id, value)
             elif type == 'r':
                 Regulation.items[id].set_point = value
             self.logger.debug(Output_element.elements_str())
@@ -95,16 +95,15 @@ class Logic_manager(threading.Thread):
         modules_to_notify = set()
         for out_element in Output_element.items.values():
             if out_element.value != out_element.desired_value:
-                #print(out_element)
                 modules_to_notify.add(Output_module.items[out_element.module_id])
         while modules_to_notify:
-            self.tasks.add(modules_to_notify.pop())
+            self.tasks.put(modules_to_notify.pop())
 
     def run(self, ):
         self.logger.info('Thread {} start'. format(self.name))
         while True:
+            
             time.sleep(0.1)
-
             self.__check_com_buffer()
             self.__check_elements_values_and_notify()
             self.__evaluate_relations_and_set_des_values()
