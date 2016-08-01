@@ -3,20 +3,17 @@ import threading
 import time
 import queue
 
-from common.elements.element import Element
-from common.elements.element import Input_element, Output_element, Blind
-from common.modules.module import Output_module
+from backend.components.elements.element import Element
+from backend.components.elements.element import Input_element, Output_element, Blind
+from backend.components.modules.module import Output_module
 
 
-from common.elements.clock import clock
+from backend.components.elements.clock import clock
 
-from common.relations.dependancy import Dependancy
-from common.relations.regulation import Regulation
+from backend.components.relations.dependancy import Dependancy
+from backend.components.relations.regulation import Regulation
 
-from sys_database.database import Database, create_db_object
-
-from common.sys_types import mt, et, regt, task_stat
-
+from backend.misc.sys_types import mt, et, regt, task_stat
 
 
 class Logic_manager(threading.Thread):
@@ -24,28 +21,20 @@ class Logic_manager(threading.Thread):
     def __init__(self, group=None, target=None, name=None, args=(), kwargs=None, verbose=None):
         threading.Thread.__init__(self, group=None, target=None, name='LOGIC')
                  
-        self.__comunication = args[0]
-        self.__db = create_db_object()
+        self._comunication_out_buffer = args[0]
+        self._comunication_in_buffer = args[1]
+        self._application_priority = 5
         self.logger = logging.getLogger('LOGIC')
         self.tasks = queue.Queue()
 
         self.__setup()
 
     def __setup(self, ):
-        self.__db.load_objects_from_table(Input_element)
-
-        self.__db.load_objects_from_table(Output_element)
-        self.__db.load_objects_from_table(Blind)
-
-        self.__db.load_objects_from_table(Dependancy)
-        self.__db.load_objects_from_table(Regulation)
 
         for blind in Blind.items.values():
             other_blind_id  =   blind.other_blind
             blind.other_blind = Blind.items[other_blind_id]
-
-
-   
+  
     def __process_msg(self, msg):
         msg = msg.split(',')
         type = msg[0][0]
@@ -55,11 +44,14 @@ class Logic_manager(threading.Thread):
 
     def __check_com_buffer(self, ):
         """Sprawdz bufor komunikacyjny jesli pelny to ustaw desired value"""
-        while not self.__comunication.out_buffer.empty():
-            msg = self.__comunication.out_buffer.get()             
+        while not self._comunication_out_buffer.empty():
+            msg = self._comunication_out_buffer.get()             
             type, id, value = self.__process_msg(msg)
             if type == 'e':
-                Output_element.items[id].set_desired_value(0, value) # priorytet wiadomosci od klienta jest najwyzszy - 0. 
+                set_flag = False
+                if value > 0:
+                    set_flag = True
+                Output_element.items[id].desired_value = (value, self._application_priority, set_flag) # priorytet wiadomosci od klienta jest najwyzszy - 0. 
                 self.logger.debug('Set desired value el: %s val: %s', id, value)
             elif type == 'r':
                 Regulation.items[id].set_point = value
@@ -76,9 +68,9 @@ class Logic_manager(threading.Thread):
                     msg = 'e' + str(element.id) + ',' + str(element.value) + ',' + 's'
                 else:
                     msg = 'e' + str(element.id) + ',' + str(element.value) 
-                self.__comunication.in_buffer.put(msg)
+                self._comunication_in_buffer.put(msg)
 
-    def __evaluate_relations_and_set_des_values(self, ):
+    def __evaluate_relations(self, ):
         """Sprawdza zaleznosci i regulacje. jesli sa spelnione to wysyla sterowanie"""
 
         for dep in Dependancy.items.values():
@@ -96,6 +88,7 @@ class Logic_manager(threading.Thread):
         for out_element in Output_element.items.values():
             if out_element.value != out_element.desired_value:
                 modules_to_notify.add(Output_module.items[out_element.module_id])
+
         while modules_to_notify:
             self.tasks.put(modules_to_notify.pop())
 
@@ -106,8 +99,21 @@ class Logic_manager(threading.Thread):
             time.sleep(0.1)
             self.__check_com_buffer()
             self.__check_elements_values_and_notify()
-            self.__evaluate_relations_and_set_des_values()
+            self.__evaluate_relations()
             self.__generate_new_tasks()
 
 
+if __name__ == "__main__":
+    from backend.objects_loader import objects_loader
+    objects_loader()
+    com_out_buffer = queue.Queue()
+    com_in_buffer = queue.Queue()
+    logic = Logic_manager(args=(com_out_buffer, com_in_buffer,))
+    logic.logger.disabled = False
+    logic.logger.setLevel("DEBUG")
+
+    Dependancy.items[1].conditions[0].notify(0)
+
+    while True:
+        logic.run()
 

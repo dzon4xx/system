@@ -4,16 +4,21 @@ from timeit import default_timer as t
 
 class Benchmark():
 
-    def __init__(self):
+    def __init__(self, logging_level):
         self.logger = logging.getLogger('BENCHMARK')
+        self.logger.disabled = False
+        self.logger.setLevel(logging_level)
         self.counter = 0
         self.snipet_timer = 0   
-        self.lps_timer = t() # loops per second timer
-        self.lt_timer  = t()      # loop time timer
+        self.lps_timer = 0 # loops per second timer
+        self.lt_timer  = 0      # loop time timer
         self.min_lt = 10000
         self.max_lt = -1
         self.min_loops_ps = 10000000
         self.max_loops_ps = 0
+
+    def start(self,):
+        t()
 
     def start_timing_snippet(self, ):
         self.snipet_timer = t()
@@ -28,18 +33,12 @@ class Benchmark():
 
     def loops_per_second(self,):
         self.counter += 1
-        lt = self.loop_time()
-        if lt < self.min_lt:
-             self.min_lt = lt
-        if lt > self.max_lt:
-            self.max_lt = lt
         if t() - self.lps_timer >= 1:
             self.lps_timer = t()
-            lps = (self.counter)
+            lps = self.counter
             self.counter = 0
-            #self.logger.info('Loops per second: {}\n Min loop time {} Max predicted loops: {}\n Max loop time {} Min predicted loops: {}'.format(lps, self.min_lt, int(1/self.min_lt),self.max_lt, int(1/self.max_lt)))
-            self.logger.info('Loops per second: {}\n Min loop time {} \n Max loop time {} '.format(lps, self.min_lt, self.max_lt))
-
+            #print('Loops per second: {} '.format(lps))       
+            self.logger.debug('Loops per second: {} '.format(lps))
             return True
         else:
             return False

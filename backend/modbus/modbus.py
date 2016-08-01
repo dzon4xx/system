@@ -1,4 +1,4 @@
-from common.check_host import is_RPI
+from backend.misc.check_host import is_RPI
 
 if is_RPI:
     import RPi.GPIO as GPIO
@@ -37,7 +37,7 @@ def run_fun(func):
             self.last_sleep = sleep_time
             if sleep_time > self.modbus.max_sleep:
                 self.modbus.max_sleep = sleep_time
-            
+
         #print(pretty_hex(request))
         self.modbus.serial.write(request)
         response = self.modbus.serial.read(num_of_bytes_to_read)
@@ -227,14 +227,14 @@ class Write_regs_function(Modbus_function):
     def run(self, slave_address, start_reg_num, values):
         
         num_of_regs = len(values)
-        byte_count = num_of_regs*2 + self.min_response_bytes
+        byte_count = num_of_regs*2 
 
         request = self._num_to_two_bytes(start_reg_num)
         request += self._num_to_two_bytes(num_of_regs)
-        request += self._num_to_two_bytes(byte_count)
+        request += bytes([byte_count])
         request += self._list_to_byte_string(values)
 
-        return request, byte_count
+        return request, self.min_response_bytes
 
 class Write_coils_function(Modbus_function):
 
@@ -329,10 +329,7 @@ class Modbus():
         return self.read_regs_obj.run(slave_address, start_reg_num, end_reg_num)
 
     def debug(self,):
-        self.logger.debug("\nCorrect frames: {}\nCorrupted frames: {}\nMax sleep: {}\nLast sleep {}".format(\
-            self.correct_frames, self.corrupted_frames, int(self.max_sleep), self.last_sleep))
+        self.logger.debug("\nCorrect frames: {}\nCorrupted frames: {}".format(self.correct_frames, self.corrupted_frames))
         
 
  
-
-

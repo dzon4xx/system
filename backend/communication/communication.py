@@ -4,6 +4,7 @@ import logging
 import os
 import time
 import queue
+
 class Communication_manager(threading.Thread):
     
     url = "ws://localhost:8888/websocket"
@@ -24,11 +25,9 @@ class Communication_manager(threading.Thread):
             self.logger.error("Can't connect to server")
             return
 
-
         wst = threading.Thread(target = self.listen_ws)
         wst.setDaemon(True)
         wst.start()
-
 
     def run(self, ):
         self.logger.info('Thread {} start'. format(self.name))
@@ -36,23 +35,31 @@ class Communication_manager(threading.Thread):
             try:
                 while True:
                     time.sleep(0.1)
+                    #self.debug()
                     while not self.in_buffer.empty():
                         msg = self.in_buffer.get()
                         self.conn.send(msg)
-            
+                    
             except websocket.WebSocketConnectionClosedException:
-                self.logger.error("Websocet disconnected")
+                self.logger.error("Websocket disconnected")
                 os._exit(1)
-
-
+            
     def listen_ws(self, ):
         while True:
             self.msg = self.conn.recv()
             self.out_buffer.put(self.msg)
-            #self.logger.debug(self.msg)
+            self.logger.debug(self.msg)
 
+if __name__ == "__main__":
+    from timeit import default_timer as t
+    from backend.misc.color_logs import color_logs
 
+    color_logs()
+    communication = Communication_manager()
+    communication.logger.disabled = False
+    communication.logger.setLevel("DEBUG")
 
-
+    while True:
+        communication.run()
 
     

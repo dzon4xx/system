@@ -5,15 +5,15 @@ import sqlite3 as sql
 import logging
 from functools import wraps
 
-from common.check_host import is_RPI
+from backend.misc.check_host import is_RPI
 
 
 def create_db_object():
     root = sys.path[-1]
     if is_RPI:
-        db_path =  "/".join([root, 'sys_database', "sys_database.db"])
+        db_path =  "/".join([root, 'backend', 'sys_database', "sys_database.db"])
     else:   
-        db_path =  "\\".join([root, 'sys_database', "sys_database.db"])
+        db_path =  "\\".join([root, 'backend', 'sys_database', "sys_database.db"])
 
 
     return Database(db_path)

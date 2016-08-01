@@ -1,5 +1,5 @@
-from common.base_object import Base_object
-from common.sys_types import et
+from backend.components.base_object import Base_object
+from backend.misc.sys_types import et
 from math import floor
 
 class Element(Base_object):
@@ -17,6 +17,7 @@ class Element(Base_object):
         self.reg_id = args[Element.COL_REG]
         self.objects_to_notify = []   
         self.new_val_flag = False
+
 
     def subscribe(self, who):
         self.objects_to_notify.append(who)
@@ -37,35 +38,43 @@ class Input_element(Element):
         """arguments: type name """
         super().__init__(*args) # inicjalizuj type, name
         Input_element.items[self.id] = self     
-        self.prev_value = None
-        self.unit = None  
-
-    def __str__(self, ):
-        return  "".join([super().__str__(), "\tprev val: ", str(self.prev_value), ])
-
+         
 class Output_element(Element):
  
     types = set((et.led, et.heater, et.ventilator, et.blind))
 
-    defualt_priority = 10
+    defualt_priority = 15
     items = {}
     def __init__(self, *args):
         super().__init__(*args)
-        Output_element.items[self.id] = self 
-        self.desired_value = None
+        Output_element.items[self.id] = self
+        self.value = 0 
+        self._desired_value = 0
         self.setter_priority = Output_element.defualt_priority   #bardzo niski priorytet. kazy moze go zmienic
 
-    def set_desired_value(self, priority, val):
-        if val > 0:
-            if priority <= self.setter_priority:
-                self.setter_priority = priority
-                self.desired_value = val
-                return True
-        elif val == 0:# przy wylaczeniu kazdy moze ustawic element
-            self.setter_priority = Output_element.defualt_priority
-            self.desired_value = 0 
-            return False
+        self.is_desired_value_set = False
 
+    @property
+    def desired_value(self,):
+        return self._desired_value
+
+    @desired_value.setter
+    def desired_value(self, args):
+        value = args[0]
+        priority = args[1]
+        set_flag = args[2]
+
+        if priority <= self.setter_priority:
+            self._desired_value = value            
+            self.is_desired_value_set = True
+
+            if set_flag:
+                self.setter_priority = priority
+            else: 
+                self.setter_priority = Output_element.defualt_priority          
+
+        else:
+            self.is_desired_value_set = False
 
     def __str__(self, ):
         return  "".join([super().__str__(), "\tdesired_value: ", str(self.desired_value)])#str(self.desired_value), "\tmodule id: ", str(self.module_id), "\tport id: ", str(self.reg_id)])
@@ -89,18 +98,18 @@ class Blind(Output_element):
         Blind.items[self.id] = self
         self.direction = args[self.COL_DIRECTION]
         self.other_blind = args[self.COL_OTHER_BLIND] # if blind is up then it is down and the other way around
-
-    def set_desired_value(self, priority, val):
-        if super(Blind, self).set_desired_value(priority, 1): # if setter has right priority to turn on blind
-            self.other_blind.desired_value = 0    # other blind motor is turned off as well ot avoid shortcut
-            return True
-        return False
+    
+    @Output_element.desired_value.setter
+    def desired_value(self, args):
+        super(Blind, self.__class__).desired_value.fset(self, args)
+        if self.is_desired_value_set:
+            self.other_blind._desired_value = 0
 
 
 if __name__ == "__main__":
     pass
 
-from common.sys_types import et
+from backend.misc.sys_types import et
 types = set((et.ds, et.dht_hum, et.dht_temp, et.pir, et.rs, et.ls, et.switch))
 num_types = set()
 

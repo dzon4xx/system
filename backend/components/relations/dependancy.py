@@ -1,10 +1,10 @@
 import operator
 import time
 
-from common.elements.element import Element, Input_element, Output_element
-from common.elements.clock import clock
+from backend.components.elements.element import Element, Input_element, Output_element
+from backend.components.elements.clock import clock
 
-from common.sys_types import effect_status
+from backend.misc.sys_types import effect_status
 
 get_millis = lambda: int(round(time.time() * 1000))
 
@@ -21,17 +21,24 @@ class Condition():
 
     def __init__(self, id,  op, comp_val):
         self.id = id
-        self.__op = Condition.operator_dict[op]
+        self._op = Condition.operator_dict[op]
         self.comp_val = comp_val
-        self.val = None
+        self._val = None
+
+    @property
+    def val(self):
+        return self._val
+
+    @val.setter
+    def val(self, value):
+        self._val = value
 
     def evaluate(self):
-        out_val = self.__op(self.val, self.comp_val)
+        out_val = self._op(self._val, self.comp_val)
         return ' ' + str(out_val) + ' '
 
-
     def notify(self, val):
-        self.val = val
+        self._val = val
 
     def __str__(self, ):
         """Representation of object"""
@@ -43,11 +50,13 @@ class Effect():
         self.id = id
         self.el_id = el_id
         self.value = value
+        self.prev_value = None
         self.time = self.__parse_time(time)
-        self.priority = 1
+        self.priority = 5
 
-        self.done = True # flaga mowiaca o tym czy wystartowac dany efekt. Zmieniana na True po kazdym pozytywnym wyliczeniu przyczyny. Jesli efekt wykonany to przechodzi do stanu False
-        self.cause_time = None # Moment uruchomienia przyczyny
+        self.done = True # Should the effect be started. if not done it should be started
+        self.set_flag = False # Does the effect should set its value. If false it sets prev value
+        self.cause_time = None # Time of cause triger
 
     def __parse_time(self, time):
         if time == '':
@@ -60,11 +69,20 @@ class Effect():
         self.done = False
 
     def run(self, ):
-        if get_millis()-self.cause_time>self.time:
-            Output_element.items[self.el_id].set_desired_value(self.priority, self.value)
+        if self.set_flag:   
+            if get_millis()-self.cause_time >= self.time:
+                output_element = Output_element.items[self.el_id]
+                self.prev_value = output_element.value
+                status = output_element.desired_value = (self.value, self.priority, True)
+                self.done = True
+                return True
+            return False
+        else:
+            status = Output_element.items[self.el_id].desired_value = (self.prev_value, self.priority, False)
             self.done = True
-            return True
-        return False
+
+    def __repr__(self,):
+        return "El id: {} done: {}".format(self.el_id, self.done)
 
 class Dependancy():
 
@@ -77,7 +95,7 @@ class Dependancy():
 
     cond_start = '[' #marker poczatku warunku
     cond_stop = ']'
-    effect_start_t = '{'
+    effect_start_t = '{' #marker poczatku czasu efektu
     effect_stop_t = '}'
     cond_marker = '!' # marker przeczyny wstawiany w stringa przyczyn. Potem w to miejsce wstawiana jest wartosc wyrazenia przyczyny (True, False)
     cause_effect_sep = 'then' #separator pomiedzy przyczynami a efektami
@@ -107,7 +125,7 @@ class Dependancy():
         self.num_of_effect = 0
         self.num_of_done_effect = 0
 
-        self.prev_result = False
+        self.prev_cause_result = False
 
         cause_str, effect_str = dep_str.split(Dependancy.cause_effect_sep)
         self.cause_template = "" # szablon przyczyny do ktorego wstrzykiwane sa wartosci warunkow.
@@ -139,6 +157,8 @@ class Dependancy():
                 self.__parse_condition(condition)               
                 condition = ''
                 confition_pos = None
+
+        pass
 
     def __parse_condition(self, condition):
         """Parsuje string warunku i tworzy obiekt warunku czasowego lub zwyklego"""
@@ -220,18 +240,23 @@ class Dependancy():
                 eval_causes += self.conditions[condition_num].evaluate()
             else:
                 eval_causes += s
-
+       
+        cause_result = eval(eval_causes)
         
-        result = eval(eval_causes)
-
-        if result and not self.prev_result: # notyfikacja tylko gdy przyczyna zmieni sie z false z false na true
-            self.prev_result = result
+        if cause_result and not self.prev_cause_result: # if the cause changes from False to True
             for effect in self.effects:
-                effect.notify(get_millis())
+                effect.cause_time = get_millis() # notyfikacja tylko gdy przyczyna zmieni sie z false na true
+                effect.done = False
+                effect.set_flag = True
 
-        return result
+        if not cause_result and self.prev_cause_result: # if the cause changes from True to False effects should be undone
+            for effect in self.effects:
+                effect.done = False
+                effect.set_flag = False
 
+        self.prev_cause_result = cause_result
 
+        return cause_result
 
     def __str__(self, ):    
         return "".join(["ID: ",str(self.id),"\ttype: ", "\tname: ", self.name, '\tdep_str: ', self.dep_str])

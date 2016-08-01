@@ -1,19 +1,19 @@
 import sys
 import logging
 
-from common.elements.element import Element, Input_element, Output_element, Blind
+from backend.components.elements.element import Element, Input_element, Output_element, Blind
 
-from common.modules.module import Module, Anfa_output, Anfa_led_light, Anfa_ambient, Anfa_input, Add_element_error
+from backend.components.modules.module import Module, Anfa_output, Anfa_led_light, Anfa_ambient, Anfa_input, Add_element_error
 
-from common.relations.dependancy import Dependancy, Dependancy_config_error
-from common.relations.regulation import Regulation, Regulation_config_error
+from backend.components.relations.dependancy import Dependancy, Dependancy_config_error
+from backend.components.relations.regulation import Regulation, Regulation_config_error
 from server__client.server.models.room import Room
 from server__client.server.models.user import User
 
-from common.sys_types import mt, et, rt, regt, gt
-from common.color_logs import color_logs
+from backend.misc.sys_types import mt, et, rt, regt, gt
+from backend.misc.color_logs import color_logs
 
-from sys_database.database import Database, create_db_object
+from backend.sys_database.database import Database, create_db_object
 
 class System_creator():
     
@@ -93,13 +93,13 @@ class System_creator():
                 Module.items[module_id[1]].add_element(port[1], blind_down)
 
             elif type in Input_element.types:
-                el = Element(self.element_id, type, name, module_id, port)
+                el = Input_element(self.element_id, type, name, module_id, port)
                 self.element_id += 1
                 Room.items[room_id].add_element(el)
                 Module.items[module_id].add_element(port, el)
 
             elif type in Output_element.types:
-                el = Element(self.element_id, type, name, module_id, port)
+                el = Output_element(self.element_id, type, name, module_id, port)
                 self.element_id += 1
                 Room.items[room_id].add_element(el)
                 Module.items[module_id].add_element(port, el)
@@ -390,6 +390,11 @@ system.add_regulation('Temp set', feed_el_id=5, out_el_id=6, set_point=20, dev=2
 system.add_regulation('Temp set', feed_el_id=12, out_el_id=13, set_point=20, dev=2)# room 2 heating
 system.add_regulation('Temp set', feed_el_id=19, out_el_id=20, set_point=20, dev=2)# room 4 heating
 system.add_regulation('Temp set', feed_el_id=27, out_el_id=28, set_point=20, dev=2)#room 5 heating
+system.add_dependancy('Turning off heater in parents sleeping room when window opened', '[e10=0] then e6=0;') #light tunr on for 100s after pir detection
+system.add_dependancy('Turning off heater in living room when window opened', '[e26=0] then e20=0;') #light tunr on for 100s after pir detection
+system.add_dependancy('Turning off heater in kitchen when window opened', '[e33=0] then e28=0;') #light tunr on for 100s after pir detection
+system.add_dependancy('Turning off heater in kitchen when window opened', '[e33=0] then e28=0;') #light tunr on for 100s after pir detection
+system.add_dependancy('Switching led in Johnys sleeping room', '[e15=1] then e14=100;') #light tunr on for 100s after pir detection
 
 print("\n")
 system.save()

@@ -1,6 +1,6 @@
-from common.sys_types import regt
-from common.base_object import Base_object
-from common.elements.element import Element, Input_element, Output_element
+from backend.misc.sys_types import regt
+from backend.components.base_object import Base_object
+from backend.components.elements.element import Element, Input_element, Output_element
 
 class Regulation_config_error(Exception):
     def __init__(self, msg):
@@ -20,6 +20,8 @@ class Regulation(Base_object):
     ID = 0
     items = {}
 
+    ON = 1
+    OFF = 0
     #regulation_fun_dict = {regt.direct  : Regulation.direct_control,
                            #regt.inverse : Regulation.inverse_control}
      
@@ -36,7 +38,7 @@ class Regulation(Base_object):
 
         Element.items[self.feed_el_id].subscribe(self)
 
-        self.priority = 5
+        self.priority = 10
         self.feed_val = None
 
     def __check_arguments(self, feed_el_id, out_el_id,  set_point, dev):
@@ -48,24 +50,26 @@ class Regulation(Base_object):
     def run(self, ):
         """calculates whether output element should be on or off"""
         out_val =  self.control()
-        Output_element.items[self.out_el_id].set_desired_value(self.priority, out_val)
+        if out_val == Regulation.ON:
+            Output_element.items[self.out_el_id].desired_value = (out_val, self.priority, True)
+
+        if out_val == Regulation.OFF:
+            Output_element.items[self.out_el_id].desired_value = (out_val, self.priority, False)
+
 
     def proportional_control(self, ):
-        ON = 1
-        OFF = 0
 
         if not self.feed_val: # if sensor does not returns any valu - its val == None
-            return OFF
+            return Regulation.OFF
 
         if self.feed_val < self.set_point:
-            return ON
+            return Regulation.ON
 
         else:
-            return OFF
+            return Regulation.OFF
 
     def inverse_control(self, ):
         pass
 
     def notify(self, val):
         self.feed_val = val
-

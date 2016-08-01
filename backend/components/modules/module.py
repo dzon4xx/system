@@ -1,5 +1,5 @@
-from common.base_object import Base_object
-from common.sys_types import mt, et
+from backend.components.base_object import Base_object
+from backend.misc.sys_types import mt, et
 from time import time 
 
 from functools import wraps
@@ -165,8 +165,9 @@ class Anfa_output(Output_module):
 
         if result:
             for element in self.elements.values():
-                element.value = element.desired_value   # element value is updated
-                element.is_new_val = True
+                if element.desired_value != element.value:   # element value needs to be updated
+                    element.value = element.desired_value   # element value is updated
+                    element.new_val_flag = True
 
         return result
 
@@ -195,7 +196,7 @@ class Anfa_led_light(Output_module):
 
         if result:
             for element in self.elements.values():
-                element.desired_value = element.value   # element value is updated
+                element.value = element.desired_value   # element value is updated
                 element.is_new_val = True
 
         return result
