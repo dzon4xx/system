@@ -1,11 +1,11 @@
-from sys_database.database import create_db_object
+from backend.sys_database.database import create_db_object
 import logging
 from server__client.server.models.room import Room
 from server__client.server.models.group import Group
 from server__client.server.models.visual_element import *
 
-from common.sys_types import rt, et
-from common.relations.regulation import Regulation
+from backend.misc.sys_types import rt, et
+from backend.components.relations.regulation import Regulation
 
 def load_system_representation():
     db = create_db_object() #database object
@@ -14,7 +14,12 @@ def load_system_representation():
 
     for room in Room.items.values():
         if room.elements: # if there are elments in room
-            room.elements = [db.read(Visual_element, 'id', int(el_num)) for el_num in room.elements.split(',')]
+            elements = room.elements
+            room.elements = []#[db.read(Visual_element, 'id', int(el_num)) for el_num in room.elements.split(',')]
+            for element_id in elements.split(','):
+                element_data = db.read_simple(Visual_element.table_name, 'id', int(element_id))
+                element_data[0] = 'e'+str(element_data[0]) #dodanie litery r do id zeby bylo wiadomo ze chodzi o wartosc nastawy regulacji
+                room.elements.append(Visual_element(*element_data[:3]))
         else:
             room.elements = [] # so the type of room.elements is always list
         if room.regulations: # if there are regulations in room
@@ -45,6 +50,7 @@ def load_system_representation():
             else:
                 room.groups[group_type].elements.append(reg)
         logger.info("Loaded room: {}".format(room.id))
+    pass
 
 
 
