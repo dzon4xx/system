@@ -13,7 +13,7 @@ from tornado.log import access_log
 from server import port
 from server.models.system_representation import load_system_representation
 
-from common.color_logs import color_logs
+from backend.misc.color_logs import color_logs
 
 
 
@@ -50,7 +50,7 @@ def load_app(port, root):
 
 if __name__ == "__main__":
 
-    access_log.disabled = False
+    access_log.disabled = True
 
 
     color_logs()

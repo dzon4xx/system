@@ -1,5 +1,5 @@
-from common.sys_types import et, gt, regt
-from common.base_object import Base_object
+from backend.misc.sys_types import et, gt, regt
+from backend.components.base_object import Base_object
 
 from dominate.tags import div, br, b, ul, li, span
 class Group(Base_object):
