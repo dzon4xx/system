@@ -4,8 +4,8 @@ from tornado import template
 import tornado.web
 from dominate.tags import div, br, h3
 
-from common.base_object import Base_object
-from common.sys_types import rt
+from backend.components.base_object import Base_object
+from backend.misc.sys_types import rt
 
 
 class Room(Base_object):
@@ -17,7 +17,7 @@ class Room(Base_object):
     COL_ELS = 3                                     
     ID = 0
     items = {}
-    groups_per_row = 3
+    groups_per_row = 4
 
     def __init__(self, *args):
         super().__init__(args[0], rt(args[1]), args[2]) # inicjalizuj id type, name
@@ -56,7 +56,7 @@ class Room(Base_object):
             r = div(cls='row')
             with r:
                 for group in row:
-                    div(cls="col-sm-4 group").add(group.get_html())
+                    div(cls="col-sm-3 group").add(group.get_html())
             room_container.add(r)
         return room_container.render()
 
