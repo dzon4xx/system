@@ -29,10 +29,10 @@ communication.logger.disabled = False
 communication.logger.setLevel("INFO")
 
 modbus_manager.logger.disabled = False
-modbus_manager.logger.setLevel("INFO")
+modbus_manager.logger.setLevel("INFO")#DEBUG
 
 modbus_manager.modbus.logger.disabled = False
-modbus_manager.modbus.logger.setLevel("INFO")
+modbus_manager.modbus.logger.setLevel("DEBUG")
 
 logic.logger.disabled = False
 logic.logger.setLevel("INFO")

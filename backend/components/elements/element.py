@@ -47,8 +47,7 @@ class Output_element(Element):
     items = {}
     def __init__(self, *args):
         super().__init__(*args)
-        Output_element.items[self.id] = self
-        self.value = 0 
+        Output_element.items[self.id] = self 
         self._desired_value = 0
         self.setter_priority = Output_element.defualt_priority   #bardzo niski priorytet. kazy moze go zmienic
 
