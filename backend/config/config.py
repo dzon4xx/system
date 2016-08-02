@@ -70,9 +70,9 @@ class System_creator():
 
         try:
             if type == et.dht:
-                el1= Element(self.element_id, et.dht_hum, 'Humidity', module_id, port)
+                el1= Input_element(self.element_id, et.dht_hum, 'Humidity', module_id, port)
                 self.element_id += 1
-                el2 = Element(self.element_id, et.dht_temp, 'Temperature', module_id, port)
+                el2 = Input_element(self.element_id, et.dht_temp, 'Temperature', module_id, port)
                 self.element_id += 1
                 Module.items[module_id].add_element(port, el1)
                 Module.items[module_id].add_element(port, el2)
@@ -105,7 +105,7 @@ class System_creator():
                 Module.items[module_id].add_element(port, el)
 
         except Add_element_error as e:
-            self.logger.warn(e.msg)
+            self.logger.error(e.msg)
            
         else:         
             self.logger.info("Created element: " + type.name + "\troom: " + str(room_id) + "\tmodule: " + str(module_id))
@@ -119,7 +119,7 @@ class System_creator():
             Dependancy(self.dependancy_id, name, dependancy_str)
             self.dependancy_id += 1
         except Dependancy_config_error as e:
-            self.logger.warn(e.msg)
+            self.logger.error(e.msg)
 
     def add_regulation(self, name = '', feed_el_id = None, out_el_id = None, set_point = None, dev = None):
         
@@ -179,6 +179,29 @@ class System_creator():
         for reg in Regulation.items.values():
             self.db.save(Regulation, (reg.id, reg.type.value, reg.name, reg.feed_el_id, reg.out_el_id, reg.set_point, reg.dev))
 
+    def print(self, ):
+        self.logger.warn("\n-----------------------SYSTEM--------------------------------")
+        for module in Module.items.values():
+            self.logger.info(str(module))
+        self.logger.info("\n")
+
+        for room in Room.items.values():
+            self.logger.info(str(room))
+
+        self.logger.info("\n")
+
+        for element in Element.items.values():
+            self.logger.info(str(element))
+ 
+        self.logger.info("\n")
+     
+        for dep in Dependancy.items.values():
+            self.logger.info(str(dep))
+
+        self.logger.info("\n")
+
+        for reg in Regulation.items.values():
+            self.logger.info(str(reg))
 
 color_logs()
 
@@ -385,6 +408,9 @@ system.add_element(type = et.rs,
                     module_id = 1,
                     port =   8)#36
 
+system.db.clear_table(Regulation)
+system.db.clear_table(Dependancy)
+
 #system.add_dependancy('wlaczanie swiatla w lazience', '[e3=1] then e2=100; e2=0{100};') #light tunr on for 100s after pir detection
 system.add_regulation('Temp set', feed_el_id=5, out_el_id=6, set_point=20, dev=2) # room 1 heating
 system.add_regulation('Temp set', feed_el_id=12, out_el_id=13, set_point=20, dev=2)# room 2 heating
@@ -395,31 +421,15 @@ system.add_dependancy('Turning off heater in living room when window opened', '[
 system.add_dependancy('Turning off heater in kitchen when window opened', '[e33=0] then e28=0;') #light tunr on for 100s after pir detection
 system.add_dependancy('Turning off heater in kitchen when window opened', '[e33=0] then e28=0;') #light tunr on for 100s after pir detection
 system.add_dependancy('Switching led in Johnys sleeping room', '[e15=1] then e14=100;') #light tunr on for 100s after pir detection
+system.add_dependancy('Demo scenario led wc light up', '[e36=1] then e2=10{0}; e2=50{3}; e2=100{6};')
+system.add_dependancy('Demo scenario blinds up', '[e36=1] then e7=1{2}; e22=1{2}; e29=1{2};')
+system.add_dependancy('Demo scenario blinds down', '[e36=1] then e7=0{3}; e22=0{4}; e29=0{5};')
+system.add_dependancy('Demo scenario led johnys light down', '[e36=1] then e14=100{0}; e14=50{3}; e14=10{6};')
+system.add_dependancy('Demo scenario led living room blink', '[e0>50] then e21=100{0}; e21=0{1}; e21=100{2}; e21=0{3}; e21=100{4};')
+system.add_dependancy('Demo scenario two inputs', '([e11=1] and [e15=1]) then e21=100{0}; e21=0{1}; e21=100{2}; e21=0{3}; e21=100{4};')
 
-print("\n")
 system.save()
 
-print("\n")
+system.print()
 
-for module in Module.items.values():
-    print(str(module))
-print("\n")
-
-for room in Room.items.values():
-    print(str(room))
-
-print("\n")
-
-for element in Element.items.values():
-    print(str(element))
- 
-print("\n")
-     
-for dep in Dependancy.items.values():
-    print(str(dep))
-
-print("\n")
-
-for reg in Regulation.items.values():
-    print(str(reg))
 
