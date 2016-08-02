@@ -2,64 +2,74 @@
 ///<reference path="../lib/md5.js"/>
 
 
-function log(msg, color) {
-    color = color || "black";
-    bgc = "White";
-    switch (color) {
-        case "success": color = "Green"; bgc = "LimeGreen"; break;
-        case "info": color = "DodgerBlue"; bgc = "Turquoise"; break;
-        case "error": color = "Red"; bgc = "Black"; break;
-        case "start": color = "OliveDrab"; bgc = "PaleGreen"; break;
-        case "warning": color = "Tomato"; bgc = "Black"; break;
-        case "end": color = "Orchid"; bgc = "MediumVioletRed"; break;
-        default: color = color;
-    }
-
-    if (typeof msg == "object") {
-        console.log(msg);
-    } else if (typeof color == "object") {
-        console.log("%c" + msg, "color: PowderBlue;font-weight:bold; background-color: RoyalBlue;");
-        console.log(color);
-    } else {
-        console.log("%c" + msg, "color:" + color + ";font-weight:bold; background-color: " + bgc + ";");
-    }
-}
-
-function getCookie(cname) {
-    var name = cname + "=";
-    var ca = document.cookie.split(';');
-    for(var i = 0; i <ca.length; i++) {
-        var c = ca[i];
-        while (c.charAt(0)==' ') {
-            c = c.substring(1);
-        }
-        if (c.indexOf(name) == 0) {
-            return c.substring(name.length,c.length);
-        }
-    }
-    return "";
-}
-
-class Communication {
+class System {
     constructor() {
-
+        this.ws = new WebSocket("ws://" + location.host + "/websocket");
     }
 
-    post(path, data) {
+    init(){
+        window.addEventListener("hashchange", function () { scrollBy(0, -60) });
+        $("input").on('change', $.proxy(this.send_value, this))
+        $(".btn").on('click', $.proxy(this.send_value, this))
+
+        this.ws.onmessage = this.get_data
+    }
+
+    get_data(evt){
+        log(evt.data, 'success');
+        var data = evt.data.split(',');
+        var id = data[0];
         
+        if (id[0] == 'r') {
+            id = 'input' + id;
+        }
+
+        var value = data[1];
+        var element = document.getElementById(id);
+        var action = data[2];
+
+        if (id.startsWith('input')) {
+            element.value = value;
+        }
+
+        else if (action == undefined) {
+            element.innerText = value;
+        }
+        else if (action == 's') {
+            if (value == 1){
+                $(element).addClass("on");
+                $(element).removeClass("off");
+                log('class on');
+            }
+            else if (value == 0) {
+                $(element).removeClass("on");
+                $(element).addClass("off");
+                log('class off');
+            }
+        }
     }
 
-    load(place, path) {
-
+    send_value(event) {
+        var id = event.currentTarget.id;
+        var val = document.getElementById(id).value;
+        if (val == 'click') {
+            val = 1
+        }
+        console.log(id, val);
+        id = id.slice('input'.length);
+        this.ws.send(id + ',' + val);
     }
+
 }
 
 class Auth {
     constructor() {
         this.user_name = getCookie('name');
+        self = this;
     }
 
     is_logged_in() {
+        console.log(this);
         if (this.user_name != '') {
             return true;
         }
@@ -115,49 +125,11 @@ class Auth {
 
 }
 
-function send_value(event) {
-    var id = event.currentTarget.id;
-    val = document.getElementById(id).value;
-    id = id.slice('input'.length);
-    console.log(id, val);
-    ws.send(id + ',' + val);
-}
-
-function system_init() {
-
-    window.addEventListener("hashchange", function () { scrollBy(0, -60) });
-
-    $("input").on('change', send_value)
-    ws = new WebSocket("ws://" + location.host + "/websocket");
-
-    ws.onmessage = function (evt) {
-        log(evt.data, 'success');
-        var data = evt.data.split(',');
-        var id = data[0];
-        var value = data[1];
-        var element = document.getElementById(id);
-        var action = data[2];
-        if (action == undefined) {
-            element.innerText = value;
-        }
-        else if (action == 's') {
-            if (value == 1){
-                $(element).addClass("on");
-                $(element).removeClass("off");
-                log('class on');
-            }
-            else if (value == 0) {
-                $(element).removeClass("on");
-                $(element).addClass("off");
-                log('class off');
-            }
-        }
-    }
-}
+auth = new Auth();
+system = new System();
 
 $(document).ready(function () {
-    $(document).on('system_redirect', system_init)
-    auth = new Auth();
+    $(document).on('system_redirect', $.proxy(system.init, system))
     if (auth.is_logged_in()) {
         auth.redirect_to_system();
     }
