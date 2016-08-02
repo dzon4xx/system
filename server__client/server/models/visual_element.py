@@ -1,5 +1,5 @@
-from common.base_object import Base_object
-from common.sys_types import et, regt
+from backend.components.base_object import Base_object
+from backend.misc.sys_types import et, regt
 from dominate.tags import div, button, h4, span, b, p, input, label
 from functools import wraps
 
@@ -21,11 +21,11 @@ class Visual_element(Base_object):
     items = {}
     def __init__(self, *args):
         Visual_element.items[args[0]] = self
-        if isinstance(args[0], str): #jesli to regulacja. wtedy id jest stringiem i pierwsza litera to r
+        if args[0].startswith('r'): #jesli to regulacja. wtedy id jest stringiem i pierwsza litera to r
             super().__init__(args[0], regt(args[1]), args[2]) # inicjalizuj id type, name
         else:
             super().__init__(args[0], et(args[1]), args[2]) # inicjalizuj id type, name
-        self.value = None
+        self.value = 0
 
     def get_html(self,):
         if self.type == et.blind:
@@ -43,11 +43,11 @@ class Visual_element(Base_object):
 
     @field
     def value_field(self, ):
-        return div(str(self.value), cls="field-value value-text text-center", id='e'+str(self.id))
+        return div(str(self.value), cls="field-value value-text text-center", id=str(self.id))
 
     @field
     def input_field(self, ):
-        return input(str(self.value), type="number", cls="field-value value-text", id="input" + str(self.id))
+        return input(value=self.value, min="10", max="40", type="number", cls="field-value value-text", id="input" + str(self.id))
     
     @field
     def state_field(self, ):
@@ -56,45 +56,29 @@ class Visual_element(Base_object):
             st = "on"
         elif self.value == '0':
             st = "off"
-        return div(cls="field-value field-value-icon "+st, id="e" + str(self.id))
+        return div(cls="field-value field-value-icon "+st, id=str(self.id))
     
     @field
     def value(self, ):
         return span(str(self.value))
-
-    def nothing(self, ):
-        return span()
-    
+   
     @field
     def slider(self,):
-
-        
-        range = input( type="range", min="0", max="100",  cls="field-value", id="inpute" + str(self.id))
-        lab = label(str(self.value), id="e" + str(self.id), style="margin-left:5px;")
+       
+        range = input(value=self.value, type="range", min="0", max="100",  cls="field-value", id="input" + str(self.id))
+        lab = label(str(self.value), id=str(self.id), style="margin-left:5px;")
         return range, lab 
 
     @field
     def blind(self, ):
-        btn_up = button('up', type="button", cls='btn btn-md btn-primary', onclick = self.__send_function(1))        
-        return btn_up
-
-    def __send_val(self, ):
-        return self.__send_function("$(#input"  + str(self.id)+")" + ".val()")
-
-    def __send_function(self, val):
-        id = 'e' + str(self.id)
-        send = ','.join([id, str(val)])
-        send = "\"" + send + "\""
-        fun = 'ws.send' + self.__brackets(send) + ";"
-        return fun
-
-    def __brackets(self, str):
-        return '(' + str + ')'
-
-
-    def get_input(self, ):
-        html= tag('span', atr="""class="fa fa-circle\"""", inner=self.value)
-
+        btn_up = input(value='click', type="button", cls='btn btn-md btn-primary', id="input" + str(self.id))
+        st = "off"
+        if self.value == '1':
+            st = "on"
+        elif self.value == '0':
+            st = "off"
+        btn_state = div(cls="field-value field-value-icon "+st, id=str(self.id))      
+        return btn_up, btn_state
 
 
 if __name__ == "__main__":
