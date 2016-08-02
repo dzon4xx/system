@@ -55,6 +55,7 @@ class Logic_manager(threading.Thread):
                 self.logger.debug('Set desired value el: %s val: %s', id, value)
             elif type == 'r':
                 Regulation.items[id].set_point = value
+                self._comunication_in_buffer.put(msg)
             self.logger.debug(Output_element.elements_str())
 
     def __check_elements_values_and_notify(self, ):
@@ -62,12 +63,13 @@ class Logic_manager(threading.Thread):
         clock.evaluate_time()
         for element in Element.items.values():
             if element.new_val_flag:
+                self.logger.info(element) 
                 element.new_val_flag = False
                 element.notify_objects() # powiadamia zainteresowane obiekty
-                if element.type in (et.pir, et.rs, et.switch, et.heater):
+                if element.type in (et.pir, et.rs, et.switch, et.heater, et.blind):
                     msg = 'e' + str(element.id) + ',' + str(element.value) + ',' + 's'
                 else:
-                    msg = 'e' + str(element.id) + ',' + str(element.value) 
+                    msg = 'e' + str(element.id) + ',' + str(element.value)                   
                 self._comunication_in_buffer.put(msg)
 
     def __evaluate_relations(self, ):
@@ -94,8 +96,7 @@ class Logic_manager(threading.Thread):
 
     def run(self, ):
         self.logger.info('Thread {} start'. format(self.name))
-        while True:
-            
+        while True:            
             time.sleep(0.1)
             self.__check_com_buffer()
             self.__check_elements_values_and_notify()
