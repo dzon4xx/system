@@ -77,6 +77,7 @@ class Database:
         self.sql_WHERE = "WHERE"
         self.sql_UPDATE = "UPDATE"
         self.sql_SET = "SET"
+        self.sql_DELETE = "DELETE"
 
     def connect(self):
         """Connects to database. If database does not exist creates one"""
@@ -122,6 +123,11 @@ class Database:
         sql_command = self._put_spaces(self.sql_SELECT, '*', self.sql_FROM, Object.table_name)
         self.cur.execute(sql_command)
         return self.cur.fetchall()
+
+    @read_remove
+    def clear_table(self, Object):
+        sql_command = self._put_spaces(self.sql_DELETE, self.sql_FROM, Object.table_name)
+        self.cur.execute(sql_command)
 
     def load_objects_from_table(self, Object):
 
