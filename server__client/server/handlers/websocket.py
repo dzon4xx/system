@@ -4,7 +4,7 @@ from server__client.server.models.visual_element import Visual_element
 
 socket_logger = logging.getLogger('WS')
 socket_logger.disabled = False
-socket_logger.setLevel("INFO")
+socket_logger.setLevel("DEBUG")
 
 class Websocket(WebSocketHandler):
 
@@ -33,7 +33,9 @@ class Websocket(WebSocketHandler):
 
         if self == Websocket.logic:
             data = message.split(',')
-            Visual_element.items[int(data[0][1:])].value = data[1]
+            id = data[0]
+            value = data[1]
+            Visual_element.items[id].value = value # Save of actual values in server memory
             for con in Websocket.clients:
                 socket_logger.debug('passing to clients')
                 con.write_message(message)
