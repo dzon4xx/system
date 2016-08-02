@@ -50,11 +50,17 @@ class Modbus_manager(threading.Thread):
                 for input_module in Input_module.items.values(): # loop for every input module to get high response speed
                     self._check_tasks() #after every read of in_mod check if there is anything to write to out_mod
                     if input_module.is_available():
-                        input_module.read() # reds values and sets them to elements
+                            input_module.read() # reds values and sets them to elements
+
+                if self.modbus.consecutive_corrupted_frames > 1:
+                    self.modbus.serial.close()
+                    self.modbus.open_serial()
+                    self.modbus.consecutive_corrupted_frames = 0
+                    self.logger.error("Serial reload")
                         
-                is_second_passed = bench.loops_per_second()
-                if is_second_passed:
-                    self.modbus.debug()
+                #is_second_passed = bench.loops_per_second()
+                #if is_second_passed:
+                #    self.modbus.debug()
 
         else:
             self.logger.error('Modbus connection error. Thread {} exits'.format(self.name))

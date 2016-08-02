@@ -49,6 +49,7 @@ def run_fun(func):
         except ValueError as e:
             self.modbus.logger.warn(e)
             self.modbus.corrupted_frames += 1
+            self.modbus.consecutive_corrupted_frames += 1
             return False
         else:
             self.modbus.correct_frames += 1
@@ -297,27 +298,31 @@ class Modbus():
         self.baudrate = baudrate
         self.connected = False
         self.port = ""
-        self.t_3_5 = 2e-3#(1/baudrate)*9*3.5 # 9 bits per charater. 3.5 characters time sleep
+        self.t_3_5 = 1e-3#(1/baudrate)*9*3.5 # 9 bits per charater. 3.5 characters time sleep
         self.sleep_timer = 0
         self.max_sleep = 0
         self.last_sleep = 0
         self.correct_frames = 0
         self.corrupted_frames = 0
+        self.consecutive_corrupted_frames = 0
 
         if is_RPI:
             self.port = "/dev/ttyUSB0"
         else:
             self.port = "COM4"
         
-        try:
-            self.serial =  serial.Serial(port=self.port, baudrate=baudrate, timeout=0.02, parity=serial.PARITY_NONE, stopbits=1)
-            self.connected = True
-        except serial.SerialException:
-            self.logger.error("Can't open port {}".format(self.port))
+        self.open_serial()
 
         self.read_regs_obj = Read_regs_function(self)
         self.write_regs_obj = Write_regs_function(self)
         self.write_coils_obj = Write_coils_function(self)
+
+    def open_serial(self):
+        try:
+            self.serial =  serial.Serial(port=self.port, baudrate=self.baudrate, timeout=0.02, parity=serial.PARITY_NONE, stopbits=1)
+            self.connected = True
+        except serial.SerialException:
+            self.logger.error("Can't open port {}".format(self.port))
 
     def write_regs(self, slave_address, start_reg_num, values):
         return self.write_regs_obj.run(slave_address, start_reg_num, values)
