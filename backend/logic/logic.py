@@ -7,7 +7,6 @@ from backend.components.elements.element import Element
 from backend.components.elements.element import Input_element, Output_element, Blind
 from backend.components.modules.module import Output_module
 
-
 from backend.components.elements.clock import clock
 
 from backend.components.relations.dependancy import Dependancy

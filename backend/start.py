@@ -32,7 +32,7 @@ modbus_manager.logger.disabled = False
 modbus_manager.logger.setLevel("INFO")#DEBUG
 
 modbus_manager.modbus.logger.disabled = False
-modbus_manager.modbus.logger.setLevel("DEBUG")
+modbus_manager.modbus.logger.setLevel("ERROR")
 
 logic.logger.disabled = False
 logic.logger.setLevel("INFO")
