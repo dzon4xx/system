@@ -5,7 +5,7 @@ from time import time
 from functools import wraps
 
 
-def communication(func):
+def command(func):
     @wraps(func)
     def func_wrapper(self, *args, **kwargs):
         self.transmission_num += 1 #
@@ -17,9 +17,29 @@ def communication(func):
         else:
             self.available = False
             self.courupted_trans_num += 1
+            if self.timeout <= self.max_timeout:
+                self.timeout *= 2
             #TODO notification about module failures
             return result
 
+    return func_wrapper
+
+def write_command(func):
+    @wraps(func)
+    def func_wrapper(self, *args, **kwargs):
+        for element in self.elements.values():
+            if element.desired_value != element.value:   # element value needs to be updated               
+                self.values[element.reg_id] = element.desired_value
+
+        result = func(self)
+
+        if result:
+            for element in self.elements.values():
+                if element.desired_value != element.value:   # element value needs to be updated
+                    element.value = element.desired_value   # element value is updated
+                    element.new_val_flag = True
+
+        return result
     return func_wrapper
 
 class Add_element_error(Exception):
@@ -32,6 +52,7 @@ class Module(Base_object):
 
     types = set((mt.led_light, mt.output, mt.ambient, mt.input))
     ID = 0
+    start_timeout = 0.01
     items = {}
     def __init__(self, *args):
         super().__init__(args[0], mt(args[1]), args[2])
@@ -42,7 +63,8 @@ class Module(Base_object):
 
         self.available = True
         self.last_timeout = 0
-        self.timeout = 3 
+        self.timeout = Module.start_timeout
+        self.max_timeout = 2 
         self.correct_trans_num = 0
         self.transmission_num = 0
         self.courupted_trans_num = 0
@@ -50,6 +72,7 @@ class Module(Base_object):
     def is_available(self, ):
 
         if self.available:
+            self.timeout = Module.start_timeout
             return True
 
         else:
@@ -59,13 +82,7 @@ class Module(Base_object):
                 return True
             
         return False
-
-    def set_timeout(self, timeout):
-
-        self.timeout = timeout
-
-
-        
+       
     def check_port_range(self, port):
         if port>self.num_of_ports-1 or port<0:
             raise Add_element_error('Port: ' + str(port) + ' out of range')
@@ -114,7 +131,7 @@ class Input_module(Module):
     def read_freq(self, value):
         self._read_freq = value
 
-    @communication
+    @command
     def read(self,):
         regs_values = self.modbus.read_regs(self.id, 0, self.num_of_regs)
         
@@ -138,7 +155,6 @@ class Output_module(Module):
         self.update = False
 
 
-
 class Anfa_output(Output_module):
 
     types = set((mt.output,))
@@ -153,23 +169,11 @@ class Anfa_output(Output_module):
         Anfa_output.items[self.id] = self 
         self.values =  [ 0 for i in range(self.num_of_regs) ]
 
-    @communication
+    @command
+    @write_command
     def write(self, ):
+        return self.modbus.write_coils(self.id, 0, self.values)#TODO: write values
 
-        for element in self.elements.values():
-            if element.desired_value != element.value:   # element value needs to be updated
-                
-                self.values[element.reg_id] = element.desired_value
-
-        result = self.modbus.write_coils(self.id, 0, self.values)#TODO: write values
-
-        if result:
-            for element in self.elements.values():
-                if element.desired_value != element.value:   # element value needs to be updated
-                    element.value = element.desired_value   # element value is updated
-                    element.new_val_flag = True
-
-        return result
 
 class Anfa_led_light(Output_module):
     
@@ -185,21 +189,11 @@ class Anfa_led_light(Output_module):
         Anfa_led_light.items[self.id] = self 
         self.values =  [ 0 for i in range(self.num_of_regs) ]
 
-    @communication
+    @command
+    @write_command
     def write(self, ):
+        return self.modbus.write_regs(self.id, 0, self.values)#TODO: write values
 
-        for element in self.elements.values():
-            if element.desired_value != element.value:   # element value needs to be updated
-                self.values[element.reg_id] = element.desired_value
-
-        result = self.modbus.write_regs(self.id, 0, self.values)#TODO: write values
-
-        if result:
-            for element in self.elements.values():
-                element.value = element.desired_value   # element value is updated
-                element.is_new_val = True
-
-        return result
 
 class Anfa_ambient(Input_module):
     
