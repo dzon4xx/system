@@ -1,4 +1,5 @@
 import time
+time.sleep(1)
 import threading
 import logging
 from backend.misc.check_host import is_RPI
@@ -13,8 +14,7 @@ from backend.objects_loader import objects_loader
 from backend.misc.color_logs import color_logs
 
 #zabezpieczyc bufory przed kolizja watkow. Tzn logika usuwa bufor a w tym samym czasie komunikacja pisze do buforu
-if is_RPI:
-    time.sleep(1)
+
 import queue
 color_logs()
 
@@ -26,16 +26,16 @@ modbus_manager = Modbus_manager(args=(logic.tasks,))
 
 
 communication.logger.disabled = False
-communication.logger.setLevel("INFO")
+communication.logger.setLevel("ERROR")
 
 modbus_manager.logger.disabled = False
-modbus_manager.logger.setLevel("INFO")#DEBUG
+modbus_manager.logger.setLevel("ERROR")#DEBUG
 
 modbus_manager.modbus.logger.disabled = False
 modbus_manager.modbus.logger.setLevel("ERROR")
 
 logic.logger.disabled = False
-logic.logger.setLevel("INFO")
+logic.logger.setLevel("ERROR")
 
 communication.setDaemon(True)
 logic.setDaemon(True)

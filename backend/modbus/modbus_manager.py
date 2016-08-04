@@ -47,17 +47,17 @@ class Modbus_manager(threading.Thread):
             bench = Benchmark(self.logger.level)
             bench.start()
             while True:
+                
                 for input_module in Input_module.items.values(): # loop for every input module to get high response speed
                     self._check_tasks() #after every read of in_mod check if there is anything to write to out_mod
                     if input_module.is_available():
-                            input_module.read() # reds values and sets them to elements
-
+                        input_module.read() # reds values and sets them to elements
                 if self.modbus.consecutive_corrupted_frames > 1:
                     self.modbus.serial.close()
                     self.modbus.open_serial()
                     self.modbus.consecutive_corrupted_frames = 0
-                    self.logger.error("Serial reload")
-                        
+                    self.logger.warn("Serial reload")
+                                       
                 #is_second_passed = bench.loops_per_second()
                 #if is_second_passed:
                 #    self.modbus.debug()

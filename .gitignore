@@ -102,3 +102,5 @@ env/
 *.VC.db
 
 system.VC.VC.opnedb
+
+documentation/

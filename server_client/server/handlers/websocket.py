@@ -4,7 +4,7 @@ from server__client.server.models.visual_element import Visual_element
 
 socket_logger = logging.getLogger('WS')
 socket_logger.disabled = False
-socket_logger.setLevel("DEBUG")
+socket_logger.setLevel("INFO")
 
 class Websocket(WebSocketHandler):
 
@@ -40,8 +40,9 @@ class Websocket(WebSocketHandler):
                 socket_logger.debug('passing to clients')
                 con.write_message(message)
         else:
-            socket_logger.debug('sending to logic')
-            Websocket.logic.write_message(message)
+            if Websocket.logic:
+                socket_logger.debug('sending to logic')
+                Websocket.logic.write_message(message)
 
     def on_close(self):
         if self != Websocket.logic:        
