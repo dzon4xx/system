@@ -1,12 +1,10 @@
 from backend.misc.check_host import is_RPI
 
-if is_RPI:
-    import RPi.GPIO as GPIO
-
 from timeit import default_timer as t
 
 import serial
 import logging
+import time
 from functools import wraps
 
 def pretty_hex(bytes):
@@ -31,16 +29,17 @@ def run_fun(func):
         
         sleep_time = t() - self.modbus.sleep_timer
         if sleep_time < self.modbus.t_3_5:
-            while t() - self.modbus.sleep_timer < self.modbus.t_3_5:
-                pass # force 3.5char sleep time
+            time.sleep(sleep_time)
         else:
             self.last_sleep = sleep_time
             if sleep_time > self.modbus.max_sleep:
                 self.modbus.max_sleep = sleep_time
 
         #print(pretty_hex(request))
+        
         self.modbus.serial.write(request)
         response = self.modbus.serial.read(num_of_bytes_to_read)
+        
         #print(pretty_hex(response))
         self.modbus.sleep_timer = t()
 
