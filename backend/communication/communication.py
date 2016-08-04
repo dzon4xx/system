@@ -18,12 +18,14 @@ class Communication_manager(threading.Thread):
         self.msg = None # msg from websocet
 
         self.connected = False
-        try:
-            self.conn = websocket.create_connection(Communication_manager.url, header = {'secret' :'f59c8e3cc40bdc367d81f0c6a84b1766'})
-            self.connected = True
-        except:
-            self.logger.error("Can't connect to server")
-            return
+        while not self.connected:
+            try:
+                self.conn = websocket.create_connection(Communication_manager.url, header = {'secret' :'f59c8e3cc40bdc367d81f0c6a84b1766'})
+                self.connected = True
+            except:
+                self.logger.error("Can't connect to server")
+                time.sleep(0.2)
+                
 
         wst = threading.Thread(target = self.listen_ws)
         wst.setDaemon(True)
