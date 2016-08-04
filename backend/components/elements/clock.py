@@ -1,7 +1,9 @@
 import datetime
 
 class Clock():
-    """Przetrzymuje aktualny czas. Moze powiadamiac co minute o aktualnym czasie (godzina, minuta). Moze powiadamiac co dziennie jaki jest dzien tygodnia"""
+    """Holds actual time. 
+    Notifies about actual time
+    Notifies about week day"""
     def __init__(self, ):
         self.objects_to_notify_weekday = []
         self.objects_to_notify_time = []
