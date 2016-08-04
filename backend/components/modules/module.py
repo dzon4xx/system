@@ -155,7 +155,7 @@ class Output_module(Module):
         self.update = False
 
 
-class Anfa_output(Output_module):
+class Output_board(Output_module):
 
     types = set((mt.output,))
 
@@ -166,7 +166,7 @@ class Anfa_output(Output_module):
     items = {}
     def __init__(self, *args):
         super().__init__(*args)
-        Anfa_output.items[self.id] = self 
+        Output_board.items[self.id] = self 
         self.values =  [ 0 for i in range(self.num_of_regs) ]
 
     @command
@@ -175,7 +175,7 @@ class Anfa_output(Output_module):
         return self.modbus.write_coils(self.id, 0, self.values)#TODO: write values
 
 
-class Anfa_led_light(Output_module):
+class Led_light_board(Output_module):
     
     types = set((mt.led_light,))
 
@@ -186,7 +186,7 @@ class Anfa_led_light(Output_module):
     items = {}
     def __init__(self, *args):
         super().__init__(args[0], mt(args[1]), args[2])
-        Anfa_led_light.items[self.id] = self 
+        Led_light_board.items[self.id] = self 
         self.values =  [ 0 for i in range(self.num_of_regs) ]
 
     @command
@@ -195,7 +195,7 @@ class Anfa_led_light(Output_module):
         return self.modbus.write_regs(self.id, 0, self.values)#TODO: write values
 
 
-class Anfa_ambient(Input_module):
+class Ambient_board(Input_module):
     
     types = set((mt.ambient,))
 
@@ -206,7 +206,7 @@ class Anfa_ambient(Input_module):
     items = {}
     def __init__(self, *args):
         Input_module.__init__(self, *args)
-        Anfa_ambient.items[self.id] =  self
+        Ambient_board.items[self.id] =  self
         self.ds18b20_counter = 0
     
     def add_element(self, port, element):
@@ -237,7 +237,7 @@ class Anfa_ambient(Input_module):
         element.module_id = self.id
         self.elements[element.id] = element
 
-class Anfa_input(Input_module):
+class Input_board(Input_module):
 
     types = set((mt.input,))
 
@@ -248,7 +248,7 @@ class Anfa_input(Input_module):
     items = {}
     def __init__(self, *args):
         Input_module.__init__(self, *args)
-        Anfa_input.items[self.id] = self
+        Input_board.items[self.id] = self
 
         
 
