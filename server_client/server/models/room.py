@@ -4,14 +4,14 @@ from tornado import template
 import tornado.web
 from dominate.tags import div, br, h3
 
-from backend.components.base_object import Base_object
+from backend.components.base_component import Base_component
 from backend.misc.sys_types import rt
 
 
-class Room(Base_object):
+class Room(Base_component):
     """Defines room display in system"""
     table_name = 'rooms'
-    column_headers_and_types = Base_object.column_headers_and_types + [['els', 'text'], ['regs', 'text']]
+    column_headers_and_types = Base_component.column_headers_and_types + [['els', 'text'], ['regs', 'text']]
     
     COL_REGS = 4
     COL_ELS = 3                                     
@@ -24,8 +24,7 @@ class Room(Base_object):
         Room.items[self.id] = self
         self.elements = args[Room.COL_ELS]
         self.regulations = args[Room.COL_REGS]
-        self.groups = OrderedDict()
-
+        self.groups = OrderedDict() # Thanks to ordered dict groups always apear in the same order
 
     def add_element(self, *elements):
         for element in elements:

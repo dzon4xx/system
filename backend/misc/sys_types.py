@@ -1,4 +1,5 @@
 from enum import Enum
+#All system types are implemented as enums
 
 class AutoNumber(Enum):
      def __new__(cls):

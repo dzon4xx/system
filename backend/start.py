@@ -24,7 +24,6 @@ communication = Communication_manager()
 logic = Logic_manager(args=(communication.out_buffer, communication.in_buffer,))
 modbus_manager = Modbus_manager(args=(logic.tasks,))
 
-
 communication.logger.disabled = False
 communication.logger.setLevel("ERROR")
 

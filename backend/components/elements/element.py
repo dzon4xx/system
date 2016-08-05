@@ -1,12 +1,12 @@
-from backend.components.base_object import Base_object
+from backend.components.base_component import Base_component
 from backend.misc.sys_types import et
 from math import floor
 
-class Element(Base_object):
+class Element(Base_component):
 
     table_name = "elements"
     COL_MODULE_ID, COL_REG,  = 3, 4, #numery kolumn
-    column_headers_and_types = Base_object.column_headers_and_types + [['module_id', 'integer'], ['register', 'integer']] 
+    column_headers_and_types = Base_component.column_headers_and_types + [['module_id', 'integer'], ['register', 'integer']] 
 
     items = {}
     def __init__(self, *args):

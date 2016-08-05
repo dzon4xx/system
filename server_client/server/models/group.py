@@ -1,9 +1,9 @@
 from backend.misc.sys_types import et, gt, regt
-from backend.components.base_object import Base_object
+from backend.components.base_component import Base_component
 
 from dominate.tags import div, br, b, ul, li, span
-class Group(Base_object):
-    """Grupa agregujaca elementy wizualne"""
+class Group(Base_component):
+    """Groups aggregate visual elements"""
 
     el_to_group_map = {et.blind : gt.blinds,
                        et.dht_hum : gt.ventilation,   # pierwsza grupa jesli czujnik jesli wewnatrz. druga jesli na zewnatrz

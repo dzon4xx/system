@@ -1,5 +1,5 @@
 class User():
-       
+    """System user"""   
     table_name = "users"
     column_headers_and_types = [['id', 'integer primary key'], 
                                 ['name', 'text'], 

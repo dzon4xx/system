@@ -2,11 +2,10 @@ import sys
 import logging
 
 from backend.components.elements.element import Element, Input_element, Output_element, Blind
-
 from backend.components.modules.module import Module, Output_board, Led_light_board, Ambient_board, Input_board, Add_element_error
-
 from backend.components.relations.dependancy import Dependancy, Dependancy_config_error
 from backend.components.relations.regulation import Regulation, Regulation_config_error
+
 from server__client.server.models.room import Room
 from server__client.server.models.user import User
 
@@ -16,7 +15,7 @@ from backend.misc.color_logs import color_logs
 from backend.sys_database.database import Database, create_db_object
 
 class System_creator():
-    
+    """Factory class for creating system components"""
     def __init__(self):
         self.db = create_db_object()
         self.db.logger.disabled = True
@@ -26,15 +25,16 @@ class System_creator():
         self.module_id  = 1 # address 0 is a broadcast address in modbus. Therfore id starts from 1
         self.dependancy_id = 0
         self.regulation_id = 0
+        self.number_of_errors = 0
      
     def create_tables(self, ):
 
         self.db.create_tables(Element,
                               Blind,
-                             Module, 
-                             Room,
-                             Dependancy,
-                             Regulation, )
+                              Module, 
+                              Room,
+                              Dependancy,
+                              Regulation, )
 
     def delete_tables(self, ):
             self.db.delete_tables(Element,
@@ -106,6 +106,7 @@ class System_creator():
 
         except Add_element_error as e:
             self.logger.error(e.msg)
+            self.number_of_errors += 1
            
         else:         
             self.logger.info("Created element: " + type.name + "\troom: " + str(room_id) + "\tmodule: " + str(module_id))
@@ -120,6 +121,7 @@ class System_creator():
             self.dependancy_id += 1
         except Dependancy_config_error as e:
             self.logger.error(e.msg)
+            self.number_of_errors += 1
 
     def add_regulation(self, name = '', feed_el_id = None, out_el_id = None, set_point = None, dev = None):
         
@@ -132,7 +134,8 @@ class System_creator():
              assert Element.items[out_el_id].type == et.ventilator
 
         else:
-            raise Regulation_config_error('REGULATION ERROR Feed element: ' + (feed_el_id) + " not in defined input elements")
+             self.logger.error('REGULATION ERROR Feed element: ' + (feed_el_id) + " not in defined input elements")
+             self.number_of_errors += 1
 
         if name == '':
             name = 'regulation ' + str(Regulation.ID)
@@ -146,7 +149,8 @@ class System_creator():
 
             self.regulation_id += 1
         except Regulation_config_error as e:
-            self.logger.warn(e.msg)
+            self.logger.error(e.msg)
+            self.number_of_errors += 1
 
     def save(self,):
         self.__save_dependancies()
@@ -203,6 +207,9 @@ class System_creator():
         for reg in Regulation.items.values():
             self.logger.info(str(reg))
 
+        if self.number_of_errors:
+            self.logger.error("There was {} errors. Scroll up to find them and fix them".format(self.number_of_errors))
+
 color_logs()
 
 system = System_creator()
@@ -212,6 +219,7 @@ system.create_tables()
 
 print("\n")
 
+#Add module giving module type and module name
 system.add_module(mt.input, 'Input')           # 1
 system.add_module(mt.output, 'Output')         # 2
 system.add_module(mt.led_light, 'Led light')   # 3
@@ -219,6 +227,7 @@ system.add_module(mt.ambient, 'Ambient')       # 4
 
 print("\n")
 
+#Add rooms giving room type and room name. Room name is going to be displayed in client application
 system.add_room(type=rt.wc, name='Water Closet') # 0
 system.add_room(type=rt.sleeping_room, name='Sleeping room')       # 1
 system.add_room(type=rt.sleeping_room, name='Sleeping room')       # 2
@@ -229,7 +238,11 @@ system.add_room(type=rt.outside, name='Outside')      # 6
 
 print("\n")
 
-# id 0
+# Add system elements giving element type (you can find all types in backend.misc.sys_types), 
+# name
+# id of the room in which the element is placed. You have to count rooms from above starting from 0.
+# module id. Same as with room
+# port. Physical port to which element is connected
 system.add_element(type = et.dht, 
                     name = 'Humidity and temperature',
                     room_id = 0,
@@ -416,32 +429,28 @@ system.add_regulation('Temp set', feed_el_id=5, out_el_id=6, set_point=20, dev=2
 system.add_regulation('Temp set', feed_el_id=12, out_el_id=13, set_point=20, dev=2)# room 2 heating
 system.add_regulation('Temp set', feed_el_id=19, out_el_id=20, set_point=20, dev=2)# room 4 heating
 system.add_regulation('Temp set', feed_el_id=27, out_el_id=28, set_point=20, dev=2)#room 5 heating
+
 system.add_dependancy('Turning off heater in parents sleeping room when window opened', '[e10=0] then e6=0;') #light tunr on for 100s after pir detection
 system.add_dependancy('Turning off heater in living room when window opened', '[e26=0] then e20=0;') #light tunr on for 100s after pir detection
 system.add_dependancy('Turning off heater in kitchen when window opened', '[e33=0] then e28=0;') #light tunr on for 100s after pir detection
 system.add_dependancy('Turning off heater in kitchen when window opened', '[e33=0] then e28=0;') #light tunr on for 100s after pir detection
-system.add_dependancy('Switching led in Johnys sleeping room', '[e15=1] then e14=100;') #light tunr on for 100s after pir detection
-system.add_dependancy('Demo scenario two inputs', '([e11=1] and [e15=1]) then e21=100{0}; e21=0{1}; e21=100{2}; e21=0{3}; e21=100{4};')
+system.add_dependancy('Demo scenario0 switching led in second sleeping room', '[e15=1] then e14=100;') #light tunr on for 100s after pir detection
 
-system.add_dependancy('Demo scenario1 led wc light up', '[e36=1] then e2=100{0}; e2=0{3}; e2=100{6};')
-system.add_dependancy('Demo scenario1 blinds up', '[e36=1] then e7=1{2}; e22=1{2}; e29=1{2};')
-system.add_dependancy('Demo scenario1 heater sleeping room 1 blink', '[e36=1] then e6=1{0}; e6=0{2}; e6=1{4}; e6=0{5};')
-system.add_dependancy('Demo scenario1 heater sleeping room 2 blink', '[e36=1] then e13=1{1}; e13=0{3}; e13=1{5};')
-system.add_dependancy('Demo scenario1 sleeping room 2 blink', '[e36=1] then e14=100{0}; e14=0{2}; e14=100{5};')
-system.add_dependancy('Demo scenario1 heater sleeping room 2 blink', '[e36=1] then e20=1{1}; e20=0{3}; e20=1{5};')
-system.add_dependancy('Demo scenario1 led living room blink', '[e36=1] then e21=100{0}; e21=50{2}; e21=100{5};')
-system.add_dependancy('Demo scenario1 heater sleeping kitchen blink', '[e36=1] then e13=1{1}; e13=0{2}; e13=1{3};')
+system.add_dependancy('Demo scenario1 two inputs', '([e11=1] and [e15=1]) then e21=100{0}; e21=0{1}; e21=100{2}; e21=0{3}; e21=100{4};')
 
-system.add_dependancy('Demo scenario1 blinds down', '[e36=1] then e7=0{3}; e22=0{4}; e29=0{5};')
-
-
-system.add_dependancy('Demo scenario1 led johnys light down', '[e36=1] then e14=100{0}; e14=50{3}; e14=10{6};')
-system.add_dependancy('Demo scenario1 led living room blink', '[e0>50] then e21=100{0}; e21=0{1}; e21=100{2}; e21=0{3}; e21=100{4};')
+system.add_dependancy('Demo scenario2 led wc light up', '[e36=1] then e2=100{0}; e2=0{3}; e2=100{6};')
+system.add_dependancy('Demo scenario2 blinds up', '[e36=1] then e7=1{2}; e22=1{2}; e29=1{2};')
+system.add_dependancy('Demo scenario2 heater sleeping room 1 blink', '[e36=1] then e6=1{0}; e6=0{2}; e6=1{4}; e6=0{5};')
+system.add_dependancy('Demo scenario2 heater sleeping room 2 blink', '[e36=1] then e13=1{1}; e13=0{3}; e13=1{5};')
+system.add_dependancy('Demo scenario2 sleeping room 2 blink', '[e36=1] then e14=100{0}; e14=0{2}; e14=100{5};')
+system.add_dependancy('Demo scenario2 heater sleeping room 2 blink', '[e36=1] then e20=1{1}; e20=0{3}; e20=1{5};')
+system.add_dependancy('Demo scenario2 led living room blink', '[e36=1] then e21=100{0}; e21=50{2}; e21=100{5};')
+system.add_dependancy('Demo scenario2 heater sleeping kitchen blink', '[e36=1] then e13=1{1}; e13=0{2}; e13=11.{3};')
+system.add_dependancy('Demo scenario2 blinds down', '[e36=1] then e7=0{3}; e22=0{4}; e29=0{5};')
+system.add_dependancy('Demo scenario2 led johnys light down', '[e36=1] then e14=100{0}; e14=50{3}; e14=10{6};')
+#system.add_dependancy('Demo scenario1 led living room blink', '[e0>50] then e21=100{0}; e21=0{1}; e21=100{2}; e21=0{3}; e21=100{4};')
 
 
 system.save()
 
 system.print()
-
-
-

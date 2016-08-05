@@ -28,19 +28,12 @@ def run_fun(func):
         request += self._calculate_crc(request)
         
         sleep_time = t() - self.modbus.sleep_timer
-        if sleep_time < self.modbus.t_3_5:
+        if sleep_time < self.modbus.t_3_5: # if there wasn't enaugh silent time, sleep!
             time.sleep(sleep_time)
-        else:
-            self.last_sleep = sleep_time
-            if sleep_time > self.modbus.max_sleep:
-                self.modbus.max_sleep = sleep_time
 
-        #print(pretty_hex(request))
-        
         self.modbus.serial.write(request)
         response = self.modbus.serial.read(num_of_bytes_to_read)
-        
-        #print(pretty_hex(response))
+
         self.modbus.sleep_timer = t()
 
         try:
@@ -56,7 +49,6 @@ def run_fun(func):
                 return self._byte_string_to_list(response[self.payload_position : -self.NUMBER_OF_CRC_BYTES]) # return payload
             
             return True #return ack
-
             
     return func_wrapper
 
@@ -139,7 +131,6 @@ class Modbus_function():
         if received_function_code != self.code:
             raise ValueError('Wrong slave function code: {} instead of {}. The response is: {!r}'.format(\
                 received_function_code, self.code, pretty_hex(response)))
-
 
     def pretty_response(self, response_length, response_address, received_function_code, payload, received_checksum):
         return """Recived checksum: {}
@@ -299,8 +290,6 @@ class Modbus():
         self.port = ""
         self.t_3_5 = 1e-3#(1/baudrate)*9*3.5 # 9 bits per charater. 3.5 characters time sleep
         self.sleep_timer = 0
-        self.max_sleep = 0
-        self.last_sleep = 0
         self.correct_frames = 0
         self.corrupted_frames = 0
         self.consecutive_corrupted_frames = 0

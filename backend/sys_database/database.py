@@ -15,7 +15,6 @@ def create_db_object():
     else:   
         db_path =  "\\".join([root, 'backend', 'sys_database', "sys_database.db"])
 
-
     return Database(db_path)
 
 def save_create(func):
@@ -81,8 +80,7 @@ class Database:
 
     def connect(self):
         """Connects to database. If database does not exist creates one"""
-        try:
-            
+        try:           
             self.con = sql.connect(self.path)
             self.__connected = True
             self.logger.debug("Database opened")
@@ -130,7 +128,7 @@ class Database:
         self.cur.execute(sql_command)
 
     def load_objects_from_table(self, Object):
-
+        """Functions allows to retrieve objects from table based on object type"""
         table = self.get_table(Object)
 
         try:
@@ -160,11 +158,11 @@ class Database:
     def save(self, Object, db_values):
         """Saves user to database"""
        
-        #Przygotowanie naglowkow kolumn i ich typow
+        #Prepare column headers
         column_headers = [ col_head_and_type[0] for col_head_and_type in Object.column_headers_and_types]
         column_headers_str = self._brackets (",".join(column_headers) )
         
-        #Przygotowanie znakow zapytania w ilosci odpowiadajacej ilosci kolumn
+        #Przygotowanie question marks for sql query
         question_marks = ""
         for col_head in Object.column_headers_and_types:
             question_marks += '?,'   
@@ -200,9 +198,7 @@ class Database:
     def update_field(self, object, field_name,  field_value):
         sql_command = self._put_spaces(self.sql_UPDATE, object.table_name, self.sql_SET, field_name, '=?', self.sql_WHERE, "id=?")
         self.cur.execute(sql_command, (field_value, object.id))
-        #self.cur.execute("UPDATE users SET logged_in=?"  " WHERE user_name=?",(str(int(user.loged_in)), user.user_name,))
          
-
     def _brackets(self, str):
         return '(' + str + ')'
 

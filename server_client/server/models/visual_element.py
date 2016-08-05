@@ -1,4 +1,4 @@
-from backend.components.base_object import Base_object
+from backend.components.base_component import Base_component
 from backend.misc.sys_types import et, regt
 from dominate.tags import div, button, h4, span, b, p, input, label
 from functools import wraps
@@ -14,7 +14,7 @@ def field(func):
         return field
     return func_wrapper
 
-class Visual_element(Base_object):
+class Visual_element(Base_component):
 
     table_name = "elements"
 

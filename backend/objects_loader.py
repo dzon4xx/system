@@ -5,6 +5,7 @@ from backend.components.relations.dependancy import Dependancy
 from backend.components.relations.regulation import Regulation
 
 def objects_loader():
+    """Loads all necessary objects for system operation from database"""
 
     db = create_db_object()
 

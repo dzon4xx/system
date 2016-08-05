@@ -3,7 +3,7 @@ import time
 from timeit import default_timer as t
 
 class Benchmark():
-
+    """Calculates number of loops in a second. Useful for testing communication speed"""
     def __init__(self, logging_level):
         self.logger = logging.getLogger('BENCHMARK')
         self.logger.disabled = False

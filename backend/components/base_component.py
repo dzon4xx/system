@@ -1,5 +1,5 @@
-class Base_object(object):
-
+class Base_component(object):
+   """Base component for all system components It stores id type name and trivial string representation"""
    column_headers_and_types = [['id', 'integer primary key'], 
                                 ['type', 'integer'],
                                 ['name', 'text'],]

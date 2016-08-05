@@ -21,6 +21,7 @@ class Clock():
 
 
     def evaluate_time(self, ):
+        """Evaluates current time. If minutes or day changes it notifies related objects"""
         self.now = datetime.datetime.now()
         
         if  self.now.minute != self.minute:

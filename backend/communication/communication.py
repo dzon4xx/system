@@ -24,7 +24,7 @@ class Communication_manager(threading.Thread):
                 self.connected = True
             except:
                 self.logger.error("Can't connect to server")
-                time.sleep(0.2)
+                time.sleep(1)
                 
 
         wst = threading.Thread(target = self.listen_ws)
@@ -33,18 +33,17 @@ class Communication_manager(threading.Thread):
 
     def run(self, ):
         self.logger.info('Thread {} start'. format(self.name))
-        if self.connected:
-            try:
-                while True:
-                    time.sleep(0.1)
-                    #self.debug()
-                    while not self.in_buffer.empty():
-                        msg = self.in_buffer.get()
-                        self.conn.send(msg)
+        try:
+            while True:
+                time.sleep(0.1)
+                #self.debug()
+                while not self.in_buffer.empty():
+                    msg = self.in_buffer.get()
+                    self.conn.send(msg)
                     
-            except websocket.WebSocketConnectionClosedException:
-                self.logger.error("Websocket disconnected")
-                os._exit(1)
+        except websocket.WebSocketConnectionClosedException:
+            self.logger.error("Websocket disconnected")
+            os._exit(1)
             
     def listen_ws(self, ):
         while True:

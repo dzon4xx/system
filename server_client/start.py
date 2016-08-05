@@ -1,21 +1,16 @@
 #!/usr/bin/python
-#import ptvsd
-#tcp://server@localhost:8081
-#ptvsd.enable_attach(secret="server", address = ('127.0.0.1', 8081) )
-#ptvsd.wait_for_attach()
 from os import path
 import tornado
+from tornado.log import access_log
+
 from server.handlers.init_handler import InitHandler
 from server.handlers.auth_handler import AuthenticationHandler
 from server.handlers.ui_handler import UiHandler
 from server.handlers.websocket import Websocket
-from tornado.log import access_log
 from server import port
 from server.models.system_representation import load_system_representation
 
 from backend.misc.color_logs import color_logs
-
-
 
 def load_routers():
 
@@ -50,8 +45,7 @@ def load_app(port, root):
 
 if __name__ == "__main__":
 
-    access_log.disabled = True
-
+    access_log.disabled = True #Tornado access log
 
     color_logs()
     root = path.dirname(__file__)

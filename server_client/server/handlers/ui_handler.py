@@ -1,7 +1,6 @@
 import tornado.web
 from server__client.server.models.room import Room
 
-
 class UiHandler(tornado.web.RequestHandler):
     def get(self):
         if self.request.path == '/ui/navigation_bar':

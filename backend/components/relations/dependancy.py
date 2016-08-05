@@ -23,25 +23,17 @@ class Condition():
         self.id = id
         self._op = Condition.operator_dict[op]
         self.comp_val = comp_val
-        self._val = None
-
-    @property
-    def val(self):
-        return self._val
-
-    @val.setter
-    def val(self, value):
-        self._val = value
+        self.val = None
 
     def evaluate(self):
         try:
-            out_val = self._op(self._val, self.comp_val)
+            out_val = self._op(self.val, self.comp_val)
             return ' ' + str(out_val) + ' '
         except TypeError:
             return ' ' + str(False) + ' '
 
     def notify(self, val):
-        self._val = val
+        self.val = val
 
     def __repr__(self, ):
         return "".join(["ID: ",str(self.id),"comp_val: ", self.comp_val, "op: ", self._op])
@@ -64,12 +56,6 @@ class Effect():
         self.set_flag = False # Does the effect should set its value. If false it sets prev value
         self.cause_time = None # Time of cause triger
 
-    def __parse_time(self, time):
-        if time == '':
-            return 0
-        else:
-            return int(time)*1000 # Conversion to ms
-
     def notify(self, milis):
         self.cause_time = milis
         self.done = False
@@ -82,8 +68,14 @@ class Effect():
                 return True
             return False
         else:
-            status = self.output_element.desired_value = (self.prev_value, self.priority, False)
+            status = self.output_element.desired_value = (self.prev_value, self.priority, False) # restore output elements to initial state
             self.done = True
+
+    def __parse_time(self, time):
+        if time == '':
+            return 0
+        else:
+            return int(time)*1000 # Conversion to ms
 
     def __repr__(self,):
         return "El id: {} done: {}".format(self.el_id, self.done)
@@ -92,7 +84,7 @@ class Dependancy():
 
     table_name = 'dependancy'
 
-    items = {}
+    
     column_headers_and_types = [['id', 'integer primary key'], 
                                 ['name', 'text'],
                                 ['dep_str', 'text']]
@@ -115,7 +107,7 @@ class Dependancy():
             'sat': 5,
             'sun': 6,}
 
-
+    items = {}
     def __init__(self, id, name, dep_str):
         self.id =  id
         Dependancy.items[self.id] =  self
@@ -131,12 +123,49 @@ class Dependancy():
 
         self.prev_cause_result = False
 
-        self.cause_str, self.effect_str = dep_str.split(Dependancy.cause_effect_sep)
+        self.cause_str, self.effects_str = dep_str.split(Dependancy.cause_effect_sep)
         self.cause_template = "" # szablon przyczyny do ktorego wstrzykiwane sa wartosci warunkow.
         self.__parse_cause(self.cause_str)
-        self.__parse_effect(self.effect_str)
-       
+        self.__parse_effects(self.effects_str)
+               
+    def run(self, ):
+        """Evaluates cause. If it is true and prev result is false it notifies all efects.
+       When the cause changes from True to false it restores effects to initial state """
+      
+        cause_result = self._evaluate_cause()
+        
+        if cause_result and not self.prev_cause_result: # if the cause changes from False to True
+            for effect in self.effects:
+                effect.cause_time = get_millis() # notyfikacja tylko gdy przyczyna zmieni sie z false na true
+                effect.done = False
+                effect.set_flag = True
+                effect.prev_value = effect.output_element.value
+
+        if not cause_result and self.prev_cause_result: # if the cause changes from True to False effects should be undone
+            for effect in self.effects:
+                effect.done = False
+                effect.set_flag = False
+
+        self.prev_cause_result = cause_result
+
+        for effect in self.effects:
+            if not effect.done:
+                effect.run() #perform effect
+
+    def _evaluate_cause(self):
+        eval_cause_string = ''
+        condition_num = 0
+        for s in self.cause_template: # Evaluate all conditions and put their results into eval strin
+            if s == Dependancy.cond_marker:
+                eval_cause_string += self.conditions[condition_num].evaluate()
+                condition_num += 1
+            else:
+                eval_cause_string += s
+
+        return eval(eval_cause_string)
+
     def __parse_cause(self, cause_str):
+        """Parses cause string"""
         condition_num = 0
         condition = ''
         condition_pos = None
@@ -165,7 +194,7 @@ class Dependancy():
         pass
 
     def __parse_condition(self, condition):
-        """Parsuje string warunku i tworzy obiekt warunku czasowego lub zwyklego"""
+        """Creates condition objects based on condition string"""
 
         op_pos = 0
         op = None   #operator
@@ -201,10 +230,11 @@ class Dependancy():
         subscribe(condition)
         self.conditions.append(condition)
 
-    def __parse_effect(self, effect_str):
-        effect_str = effect_str.strip().rstrip(';')
-        effect_array = effect_str.split(';')
-        for effect in effect_array:
+    def __parse_effects(self, effects_str):
+        """Creates effect objects based on effect string"""
+        effects_str = effects_str.strip().rstrip(';')
+        effects_array = effects_str.split(';')
+        for effect in effects_array:
             effect = effect.strip()
             op_pos = 0
             time_pos = None
@@ -235,34 +265,6 @@ class Dependancy():
             effect = Effect(self.num_of_effect, element_id, set_value, time)
             self.num_of_effect += 1
             self.effects.append(effect)
-        
-    def evaluate_cause(self, ):
-        eval_cause_string = ''
-        condition_num = 0
-        for s in self.cause_template:
-            if s == Dependancy.cond_marker:
-                eval_cause_string += self.conditions[condition_num].evaluate()
-                condition_num += 1
-            else:
-                eval_cause_string += s
-       
-        cause_result = eval(eval_cause_string)
-        
-        if cause_result and not self.prev_cause_result: # if the cause changes from False to True
-            for effect in self.effects:
-                effect.cause_time = get_millis() # notyfikacja tylko gdy przyczyna zmieni sie z false na true
-                effect.done = False
-                effect.set_flag = True
-                effect.prev_value = effect.output_element.value
-
-        if not cause_result and self.prev_cause_result: # if the cause changes from True to False effects should be undone
-            for effect in self.effects:
-                effect.done = False
-                effect.set_flag = False
-
-        self.prev_cause_result = cause_result
-
-        return cause_result
 
     def __str__(self, ):    
         return "".join(["ID: ",str(self.id),"\ttype: ", "\tname: ", self.name, '\tdep_str: ', self.dep_str])

@@ -21,7 +21,7 @@
                     <a class="dropdown-toggle" data-toggle="dropdown" href="#">Rooms <span class="caret"></span></a>
                     <ul class="dropdown-menu">
                         {% for room in rooms%}
-                        <li class="room-anchor"><a data-toggle="collapse" data-target="#myNavbar" href="#room{{room.id}}">{{room.name}}</a></li>
+                        <li class="room-anchor"><a href="#room{{room.id}}">{{room.name}}</a></li>
                         {% end %}
                     </ul>
             </ul>
