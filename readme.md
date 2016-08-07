@@ -5,7 +5,7 @@
 2. **Purpose**
 2. **Hardware**
 3. **Software**
-4. **System in action! **
+4. **System in action**
 4. **Installation**
 5. **Conclusion**
 
@@ -124,8 +124,7 @@ System can be installed on linux and windows machines. Server and client applica
 3. Install packages used in project:  
 ```sudo pip3.5 install pyserial websocket-client coloredlogs tornado dominate```
 4. All imports statements in the code are relative to system directory. To make python see this directory as environment directory you should add ```system.pth``` file in site-packages directory. you can find the directory by typing in python shell:  
-```import site```   
-```site.getsitepackages()```
+```import site site.getsitepackages()```
 
 **Config steps:**
 
