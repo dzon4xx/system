@@ -111,6 +111,7 @@ Then you can add as many input and output elements as you want, specifying to wh
 
 ### System in action!
 
+Video presents operation of system: https://www.youtube.com/watch?v=Z7VvjViKQB0&feature=youtu.be
 
 ### Installation
 
