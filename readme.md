@@ -20,7 +20,7 @@ In this manual I will describe intelligent home system which I have to developed
 
 ### Purpose
 
-Purpose of project is to build intelligent home system which is reliable, scalable, modifiable and cheap. In my opinion reliability can by only achieved by using wired network between system nodes. Modular topology gives scalability as you can easily extend system by adding extra modules. I have tried to write simple understandable and modular Python code so it would be easy to modify working of system. Talking about system cost for a small 50-60 m2 flat my estimations are 250$. I will explain this number later on.
+Purpose of project is to build intelligent home system which is reliable, scalable, modifiable and cheap. In my opinion reliability can by only achieved by using wired network between system nodes. Modular topology gives scalability as you can easily extend system by adding extra modules. I did my best to write simple understandable and modular Pythonic code so it would be easy to modify operation of the system. Talking about cost it is widely known that RPi is a cheap computer (about 20$). Same goes with slave boards for which production price oscilates between 30-50$ depending on the board.
 
 ### Hardware
 
