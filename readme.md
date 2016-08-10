@@ -154,4 +154,4 @@ Currently project is in working but still very early stage. I have a lot of idea
 * Graphs for ambient readings.
 * Module for configuration slave boards f. example dim time for led light board or types of connected device for input board so it knows how to deal with them rather than simply returning 1 or 0 corresponding to on and off.
 
-If you would like to cooperate with me on system development, I would be very pleased. I can support with the hardware needed as I have got few additional boards. Please contact me with any questions via email: janpleszynski@gmail.com or simply on Facebook: https://www.facebook.com/jan.pleszynski
+If you would like to cooperate with me on system development, I would be very pleased. I can support with the hardware needed as I have got few additional boards. Please contact me with any questions via email: _janpleszynski@gmail.com or simply on Facebook: _https://www.facebook.com/jan.pleszynski remove trailing _ .
