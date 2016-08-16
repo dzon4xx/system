@@ -1,9 +1,11 @@
-from backend.misc.check_host import is_RPI
 from timeit import default_timer as t
 import serial
 import logging
 import time
 from functools import wraps
+
+from backend.misc.check_host import is_RPI
+from backend.misc.benchmark import Benchmark
 
 
 def pretty_hex(_bytes):
@@ -47,35 +49,32 @@ class ModbusFunction:
     WRITE_FUNCTIONS_CODES = {5, 6, 15, 16}
     READ_FUNCTIONS_CODES = {1, 2, 3, 4}
 
-    def __init__(self, modbus):
-        self.modbus = modbus
+    def __init__(self):
         self.code = None
         self.payload_position = None
 
-    def _validate_response(self, slave_address, response):
-
+    def validate(self, slave_address, response):
+        """Validate slave board response. Response can be invalid due to Slave failure or communication failure.
+        Invalid response should not propragate to system. It should be ignored"""
         response_length = len(response)
 
         if response_length == 0:
-            # raise ValueError
             raise ValueError('Slave {} is not responding'.format(slave_address))
 
-        # check frame length
         if response_length < 5:
             raise ValueError('Slave {} response too short: {!r}'.format(slave_address, pretty_hex(response)))
 
         response_address = response[self.SLAVE_ADDRESS_POS]
         received_function_code = response[self.FUNCTION_CODE_POS]
         received_checksum = response[-self.NUMBER_OF_CRC_BYTES:]
-        # check
+
         if response_length == 5:
             if received_function_code == self._set_bit_on(self.code, self.FUNCTION_CODE_ERROR_BIT):
                 raise ValueError('Slave {} is indicating an error. The response is: {!r}'.format(slave_address,
                                                                                                  pretty_hex(response)))
 
-        # check received checksum vs calculated checksum
         calculated_checksum = self._calculate_crc(response[0: - self.NUMBER_OF_CRC_BYTES])
-        if received_checksum != calculated_checksum:
+        if received_checksum != calculated_checksum:  # check received checksum vs calculated checksum
             template = 'Slave {} checksum error. \nExcepted checksum {}\n{}'
             
             payload = response[self.payload_position: -self.NUMBER_OF_CRC_BYTES]
@@ -85,17 +84,17 @@ class ModbusFunction:
                                    self.pretty_response(*response_tuple))
             raise ValueError(text)
 
-        # Check slave address
-        if response_address != slave_address:
+        if response_address != slave_address:  # Check if return slave address is the same
             raise ValueError('Wrong slave address: {} instead of {}. The response is: {!r}'.format(
                 response_address, slave_address, pretty_hex(response)))
 
-        if received_function_code != self.code:
+        if received_function_code != self.code:  # Check if return function code is the same
             raise ValueError('Wrong slave function code: {} instead of {}. The response is: {!r}'.format(
                 received_function_code, self.code, pretty_hex(response)))
 
     @staticmethod
     def pretty_response(response_length, response_address, received_function_code, payload, received_checksum):
+        """Formats response in a pleasent readable way"""
         return """Recived checksum: {}
         Frame length: {}
         Address: {}
@@ -109,11 +108,12 @@ class ModbusFunction:
 
     @staticmethod
     def _set_bit_on(val, bit_num):
+        """Sets bit on desired position"""
         return val | (1 << bit_num)
-        pass
 
     def _calculate_crc(self, inputstring):
-
+        """Calculates cyclic redundance cheskum.
+        Thanks to CRC it is easy to recognize if communication packet is corrupted"""
         register = 0xFFFF  # Preload a 16-bit register with ones
 
         for char in inputstring:
@@ -121,7 +121,7 @@ class ModbusFunction:
         return ModbusFunction._num_to_two_bytes(register, lsb_first=True)
 
     def _list_to_byte_string(self, _list):
-               
+        """Converts list with integer values to binary string"""
         bytestring = b""
         for value in _list:
             bytestring += self._num_to_two_bytes(value)
@@ -129,11 +129,11 @@ class ModbusFunction:
         return bytestring
 
     @staticmethod
-    def _byte_string_to_list(bytestring):
-        """Converts packed byte string into list o values"""
+    def _byte_string_to_list(byte_string):
+        """Converts binary string into list o values"""
         values = []
         two_bytes = [0, 0]
-        for byte_num, byte in enumerate(bytestring):
+        for byte_num, byte in enumerate(byte_string):
             two_bytes[byte_num % 2] = byte
             if byte_num % 2 == 1:
                 values.append(ModbusFunction._two_bytes_to_num(two_bytes))
@@ -142,11 +142,13 @@ class ModbusFunction:
 
     @staticmethod
     def _two_bytes_to_num(two_bytes):
+        """Converts two bytes list to integer number"""
         return two_bytes[0]*256 + two_bytes[1]
 
     @staticmethod
     def _num_to_two_bytes(value, lsb_first=False):
-
+        """Converts integer number to two bytes list.
+        List may be least siginifican byte first or most significant byte first"""
         msb = value >> 8
         lsb = value & 255
 
@@ -156,55 +158,34 @@ class ModbusFunction:
             return bytes([msb, lsb])
 
     @staticmethod
-    def decorator(func):
-        """ Wrapper for run functions of modbus functions.
-            It expect function's request part and number of bytes to read .
-            "It embedes function request with slave address, fun code, crc.
-            Then it performs write and read, validates response and return either payload or ack, nack.
-        """
-
-        @wraps(func)
-        def func_wrapper(self, slave_address, *modbus_fun_args):
+    def slave_address_and_crc(modbus_fun):
+        """Decorator that wraps every modbus function run method.
+            It adds at the begging of the request slave address, modbus function code.
+            It adds at the enf of the request CRC"""
+        @wraps(modbus_fun)
+        def function_wrapper(self, slave_address, *modbus_fun_args):
             request = bytes([slave_address, self.code])  # slave address
-            fun_request_part, num_of_bytes_to_read = func(self, *modbus_fun_args)  # function specific part of request
+            fun_request_part, num_of_bytes_to_read = modbus_fun(self, *modbus_fun_args)  # function specific part of request
             request += fun_request_part
             request += self._calculate_crc(request)
 
-            sleep_time = t() - self.modbus.sleep_timer
-            if sleep_time < self.modbus.t_3_5:  # if there wasn't enaugh silent time, sleep!
-                time.sleep(sleep_time)
+            return request, num_of_bytes_to_read
 
-            self.modbus.serial.write(request)
-            response = self.modbus.serial.read(num_of_bytes_to_read)
+        return function_wrapper
 
-            self.modbus.sleep_timer = t()
-
-            try:
-                self._validate_response(slave_address, response)
-            except ValueError as e:
-                self.modbus.logger.warn(e)
-                self.modbus.corrupted_frames += 1
-                self.modbus.consecutive_corrupted_frames += 1
-                return False
-            else:
-                self.modbus.correct_frames += 1
-                if self.code in self.READ_FUNCTIONS_CODES:  # return payload
-                    return self._byte_string_to_list(response[self.payload_position: -self.NUMBER_OF_CRC_BYTES])
-
-                return True  # return ack
-
-        return func_wrapper
+    def __repr__(self, ):
+        return self.__class__.__name__ + " code: " + str(self.code)
 
 
 class ReadRegsFunction(ModbusFunction):
-    def __init__(self, modbus):
-        super().__init__(modbus)
+    def __init__(self):
+        super().__init__()
         self.min_request_bytes = 5
         self.min_response_bytes = 5
         self.code = 3
         self.payload_position = 3
 
-    @ModbusFunction.decorator
+    @ModbusFunction.slave_address_and_crc
     def run(self, start_reg_num, end_reg_num):
         num_of_regs = end_reg_num - start_reg_num + 1
         request = self._num_to_two_bytes(start_reg_num)
@@ -213,20 +194,20 @@ class ReadRegsFunction(ModbusFunction):
         number_of_bytes_to_read = self.min_request_bytes + 2*num_of_regs      
         return request, number_of_bytes_to_read
 
-    def __repr__(self,):
-        return "Function 3 - read registers"
+    def get_payload(self, response):
+        return self._byte_string_to_list(response[self.payload_position: -self.NUMBER_OF_CRC_BYTES])
 
 
 class WriteRegsFunction(ModbusFunction):
 
-    def __init__(self, modbus):
-        super().__init__(modbus)
+    def __init__(self):
+        super().__init__()
         self.min_request_bytes = 9
         self.min_response_bytes = 8
         self.code = 16
         self.payload_position = 2
 
-    @ModbusFunction.decorator
+    @ModbusFunction.slave_address_and_crc
     def run(self, start_reg_num, values):
         
         num_of_regs = len(values)
@@ -242,14 +223,14 @@ class WriteRegsFunction(ModbusFunction):
 
 class WriteCoilsFunction(ModbusFunction):
 
-    def __init__(self, modbus):
-        super().__init__(modbus)
+    def __init__(self):
+        super().__init__()
         self.min_request_bytes = 11
         self.min_response_bytes = 8
         self.code = 15
         self.payload_position = 2
 
-    @ModbusFunction.decorator
+    @ModbusFunction.slave_address_and_crc
     def run(self, start_coil_num, values):
         
         num_of_coils = len(values)
@@ -295,8 +276,9 @@ class WriteCoilsFunction(ModbusFunction):
 
 
 class Modbus:
-
-    def __init__(self, baudrate):
+    """Handles opening and closing of serial port.
+       Gives API to modbus functions"""
+    def __init__(self, baudrate=38400,):
         self.logger = logging.getLogger('MODBUS')
 
         self.baudrate = baudrate
@@ -308,38 +290,102 @@ class Modbus:
         self.corrupted_frames = 0
         self.consecutive_corrupted_frames = 0
 
+        self.bench = Benchmark(self.logger.level)
+        self.bench.start()
+
         if is_RPI:
             self.port = "/dev/ttyUSB0"
         else:
             self.port = "COM4"
 
-        self.serial = None
-        self.open_serial()
+        self.serial_port = None
 
-        self.read_regs_obj = ReadRegsFunction(self)
-        self.write_regs_obj = WriteRegsFunction(self)
-        self.write_coils_obj = WriteCoilsFunction(self)
+        self.read_regs_obj = ReadRegsFunction()
+        self.write_regs_obj = WriteRegsFunction()
+        self.write_coils_obj = WriteCoilsFunction()
 
-    def open_serial(self):
+    def open(self):
         try:
-            self.serial = serial.Serial(port=self.port,
+            self.serial_port = serial.Serial(port=self.port,
                                         baudrate=self.baudrate,
                                         timeout=0.02,
                                         parity=serial.PARITY_NONE,
                                         stopbits=1)
             self.connected = True
+            return True
         except serial.SerialException:
             self.logger.error("Can't open port {}".format(self.port))
+            return False
+
+    def is_available(self):
+        if self.consecutive_corrupted_frames > 1:
+            return False
+        else:
+            return True
+
+    def reload(self):
+        self.close()
+        self.open()
+        self.consecutive_corrupted_frames = 0
+        self.logger.warn("Serial reload")
+
+    def close(self):
+        self.serial_port.close()
+        self.connected = False
 
     def write_regs(self, slave_address, start_reg_num, values):
-        return self.write_regs_obj.run(slave_address, start_reg_num, values)
+        return self.run(self.write_regs_obj, slave_address, start_reg_num, values)
 
     def write_coils(self, slave_address, start_coil_num, values):
-        return self.write_coils_obj.run(slave_address, start_coil_num, values)
+        return self.run(self.write_coils_obj, slave_address, start_coil_num, values)
 
     def read_regs(self, slave_address, start_reg_num, end_reg_num):
-        return self.read_regs_obj.run(slave_address, start_reg_num, end_reg_num)
+        return self.run(self.read_regs_obj, slave_address, start_reg_num, end_reg_num)
+
+    def run(self, func_obj, slave_address, *modbus_fun_args):
+        """ Wrapper for run functions of modbus functions.
+            It expect function's request part and number of bytes to read .
+            "It embedes function request with slave address, fun code, crc.
+            Then it performs write and read, validates response and return either payload or ack, nack.
+        """
+
+        request, num_of_bytes_to_read = func_obj.run(slave_address, *modbus_fun_args)  #
+        sleep_time = t() - self.sleep_timer
+        if sleep_time < self.t_3_5:  # if there wasn't enaugh silent time, sleep!
+            time.sleep(sleep_time)
+
+        self.serial_port.write(request)
+        response = self.serial_port.read(num_of_bytes_to_read)
+
+        self.sleep_timer = t()
+
+        try:
+            func_obj.validate(slave_address, response)
+        except ValueError as e:
+            self.logger.warn(e)
+            self.corrupted_frames += 1
+            self.consecutive_corrupted_frames += 1
+            return False
+        else:
+            self.correct_frames += 1
+            if func_obj.code in ModbusFunction.READ_FUNCTIONS_CODES:  # return payload
+                return func_obj.get_payload(response)
+
+            return True  # return ack
 
     def debug(self,):
-        self.logger.debug("\nCorrect frames: {}\nCorrupted frames: {}".format(self.correct_frames,
-                                                                              self.corrupted_frames))
+        if self.bench.loops_per_second():
+            self.logger.debug("\nCorrect frames: {}\nCorrupted frames: {}".format(self.correct_frames,
+                                                                                  self.corrupted_frames))
+
+
+if __name__ == "__main__":
+    from time import sleep
+    from backend.objects_loader import objects_loader
+    modbus = Modbus(baudrate=38400)
+    modbus.open()
+    objects_loader()
+
+    modbus.write_coils(2, 0, [1 for i in range(10)])
+    modbus.write_coils(2, 0, [0 for i in range(10)])
+
