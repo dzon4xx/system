@@ -2,6 +2,7 @@ import logging
 import time
 from timeit import default_timer as t
 
+
 class Benchmark():
     """Calculates number of loops in a second. Useful for testing communication speed"""
     def __init__(self, logging_level):
@@ -10,8 +11,8 @@ class Benchmark():
         self.logger.setLevel(logging_level)
         self.counter = 0
         self.snipet_timer = 0   
-        self.lps_timer = 0 # loops per second timer
-        self.lt_timer  = 0      # loop time timer
+        self.lps_timer = 0  # loops per second timer
+        self.lt_timer = 0   # loop time timer
         self.min_lt = 10000
         self.max_lt = -1
         self.min_loops_ps = 10000000

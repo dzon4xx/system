@@ -1,14 +1,15 @@
 from enum import Enum
-#All system types are implemented as enums
+
 
 class AutoNumber(Enum):
-     def __new__(cls):
-         value = len(cls.__members__) + 1
-         obj = object.__new__(cls)
-         obj._value_ = value
-         return obj
+    def __new__(cls):
+        value = len(cls.__members__) + 1
+        obj = object.__new__(cls)
+        obj._value_ = value
+        return obj
 
-class et(AutoNumber):
+
+class Et(AutoNumber):
     ds = ()
     dht = ()
     dht_temp = ()
@@ -22,21 +23,24 @@ class et(AutoNumber):
     blind = ()
     switch = ()
 
-class mt(AutoNumber):
-    input   =   ()
-    output  =   ()
-    ambient =   ()
+
+class Mt(AutoNumber):
+    input = ()
+    output = ()
+    ambient = ()
     led_light = ()
-    
-class gt(AutoNumber):
+
+
+class Gt(AutoNumber):
     blinds = ()
     heating = ()
     inputs = ()
     ventilation = ()
-    lights  = ()
+    lights = ()
     ambient = ()
 
-class rt(AutoNumber):
+
+class Rt(AutoNumber):
     inside = ()
     outside = ()
     kitchen = ()
@@ -46,21 +50,24 @@ class rt(AutoNumber):
     living_room = ()
     
 
-class ut(AutoNumber):
+class Ut(AutoNumber):
     guest = ()
     inhabitant = ()
     admin = ()
 
-class regt(AutoNumber):
+
+class Regt(AutoNumber):
     temp = ()
     hum = ()
 
-class task_stat(AutoNumber):
+
+class TaskStat(AutoNumber):
     new = ()
     ready = ()
     done = ()
     logged = ()
 
-class effect_status(AutoNumber):
+
+class EffectStatus(AutoNumber):
     new = ()
     done = ()
