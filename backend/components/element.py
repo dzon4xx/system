@@ -73,7 +73,7 @@ class OutputElement(Element):
         return "".join([super().__str__(), "\tdesired_value: ", str(self.desired_value)])
 
     @staticmethod
-    def elements_str():
+    def str():
         string = "\n"
         for element in OutputElement.items.values():
             el_str = str(element) 
