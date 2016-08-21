@@ -1,5 +1,6 @@
 import unittest
 import datetime
+import time
 
 from backend.components.clock import Clock
 
@@ -10,6 +11,14 @@ class TestClock(unittest.TestCase):
 
     def setUp(self):
         self.clock = Clock()
+        self.clock.restart()
+
+    def test_get_seconds(self):
+        self.assertAlmostEqual(self.clock.get_seconds(), 0, 3)
+
+    def test_get_milis(self):
+        time.sleep(0.001)
+        self.assertAlmostEqual(self.clock.get_millis(), 1, 0)
 
     def test_subscribe(self):
 

@@ -1,11 +1,9 @@
 import unittest
-import logging
-from collections import namedtuple
+import time
 
 from backend.components.dependancy import Condition
 from backend.components.dependancy import Effect
 from backend.components.dependancy import Dependancy
-from backend.components.dependancy import get_millis
 from backend.components.dependancy import DependancyConfigError
 
 from backend.components.element import Element, OutputElement
@@ -14,99 +12,100 @@ from backend.components.clock import Clock
 
 class TestCondition(unittest.TestCase):
 
+    def setUp(self):
+        id, op, self.comp_val = 1, "=", 20
+        self.condition = Condition(id, op, comp_val=self.comp_val)
+
     def test_notify(self):
-        condition = Condition(1, "=", 20)
-        condition.notify(5)
-        self.assertEqual(condition.val, 5)
+        # when
+        self.condition.notify(5)
 
-    def test_evaluate(self):
+        # then
+        self.assertEqual(self.condition.val, 5)
 
-        comp_val = 20
+    def test_evaluate_false(self):
+        # given
         notify_val = 5
 
-        condition = Condition(1, "=", comp_val)
+        # when
+        self.condition.notify(notify_val)
+        result = self.condition.evaluate()
 
-        condition.notify(notify_val)
-        result = condition.evaluate()
+        # then
         self.assertFalse(eval(result))
 
-        condition.notify(comp_val)
-        result = condition.evaluate()
+    def test_evaluate_true(self):
+        # when
+        self.condition.notify(self.comp_val)
+        result = self.condition.evaluate()
+
+        # then
         self.assertTrue(eval(result))
 
 
 class TestEffect(unittest.TestCase):
 
-    def test_parse_time(self):
+    def setUp(self):
+        self.clock = Clock()
 
-        effect = Effect(0, 5, 5, '12')
-        self.assertEqual(effect.time, 12000)
+        el_id, _type, name, mod_id, reg_id = 0, 1, '', 0, 0
+        self.output_element = OutputElement(el_id, _type, name, mod_id, reg_id)
 
-        effect = Effect(0, 5, 5, ' 12 ')
-        self.assertEqual(effect.time, 12000)
+        ef_id, value, _time = 0, 1, 1
+        self.effect = Effect(ef_id, self.output_element, value, _time)
 
-        with self.assertRaises(DependancyConfigError):
-            Effect(0, 5, 5, 'a')
+    def test_start(self):
+        # when cause time is 1000ms
+        self.effect.start(1000)
 
-        with self.assertRaises(DependancyConfigError):
-            Effect(0, 5, 5, None)
+        # then effects cause time should be set to 1000ms and out_el value should be saved
+        self.assertEqual(self.effect.cause_time, 1000)
+        self.assertEqual(self.effect.prev_value, self.output_element.value)
 
-        effect = Effect(0, 5, 5, 12)
-        self.assertEqual(effect.time, 12000)
+    def test_run_cause_is_before_effect_time(self):
+        # given effect time 1ms after cause
+        self.effect.time = 1
 
-    def test_notify(self):
+        # when
+        self.effect.start(self.clock.get_millis())
+        time.sleep(0.001)
 
-        output_el = namedtuple("Output_element", "value", "desired_value")
-        output_el.value = 20
+        # then
+        self.assertTrue(self.effect.run())  # effect should happen
+        self.assertEqual(self.output_element.desired_value, self.effect.value)
 
-        effect = Effect(0, output_el, 5, '12')
+    def test_run_more_times(self):
+        # given
+        self.effect.time = 0
+        # when
+        self.effect.start(self.clock.get_millis())
+        time.sleep(0.001)
 
-        effect.notify(2500)
-
-        self.assertEqual(effect.cause_time, 2500)
-        self.assertEqual(effect.prev_value, output_el.value)
-
-    def test_run(self):
-
-        output_el = OutputElement(0, 1, '', 0, 0)
-
-        value = 5
-        effect_time = 0
-        effect = Effect(0, output_el, value, effect_time)
-
-        effect.notify(get_millis())
-
-        self.assertTrue(effect.run())  # effect should happen
-        self.assertEqual(output_el.desired_value, value)
-
-        value = 5
-        effect_time = 1
-        effect = Effect(0, output_el, value, effect_time)
-
-        effect.notify(get_millis())
-        self.assertFalse(effect.run())  # effect shouldn't happen
+        # then Effect should happen only once
+        self.assertTrue(self.effect.run())  # effect should happen
+        self.assertFalse(self.effect.run())  # effect should not happen
+        self.assertFalse(self.effect.run())  # effect should not happen
 
     def test_revert_set(self):
 
-        output_el = OutputElement(0, 1, '', 0, 0)
-        output_el.value = 20
+        # when normal effect flow
+        self.effect.start(self.clock.get_millis())
+        time.sleep(0.001)
+        self.effect.run()
+        self.effect.revert()
 
-        value = 5
-        effect_time = 0
-        effect = Effect(0, output_el, value, effect_time)
-
-        effect.notify(get_millis())
-        effect.run()
-        effect.revert()
-        self.assertEqual(output_el.desired_value, (effect.prev_value, effect.priority, False))
+        # then output_element desired value should be reverted
+        self.assertEqual(self.output_element.desired_value, self.effect.prev_value)
 
 
 class TestDependancy(unittest.TestCase):
 
     def setUp(self):
+        self.clock = Clock()
+        dep_id, name = 0, ''
         dep_str = '[e1=2] and [e2=3] and [d=mon] and [t=5:30] then e3=20{0}; e3=0{200}; e4=1{0}'
 
-        self.dep = Dependancy(1, '', dep_str)
+        self.dep = Dependancy(dep_id, name, dep_str)
 
     def test_find_condition(self):
 
@@ -119,62 +118,64 @@ class TestDependancy(unittest.TestCase):
         self.assertEqual(self.dep.cause_template, '! and ! and ! and !')
 
     def test_parse_condition(self):
-
+        # given
         condition_str_day = 'd=mon,tue,wed,thu,fri'
 
+        # when
         element, op, comp_value = self.dep._parse_condition(condition_str_day)
+
+        # then
         self.assertEqual((element, op, comp_value), ('d', '=', 'mon,tue,wed,thu,fri'))
 
     def test_parse_cause(self):
-
+        # given
         element_dict = {1: Element(1, 1, '', 1, 1), 2: Element(2, 1, '', 1, 1)}
-        clock = Clock()
 
-        self.dep._parse_cause(all_elements=element_dict, clock=clock)
+        # when
+        self.dep._parse_cause(all_elements=element_dict)
 
+        # then found all conditions
         self.assertEqual(self.dep.num_of_conds, 4)
 
+        # then all conditions are subscribed to elemenets
         self.assertIn(self.dep.conditions[0], element_dict[1].objects_to_notify)
         self.assertIn(self.dep.conditions[1], element_dict[2].objects_to_notify)
-        self.assertIn(self.dep.conditions[2], clock.objects_to_notify_weekday)
-        self.assertIn(self.dep.conditions[3], clock.objects_to_notify_time)
+        self.assertIn(self.dep.conditions[2], self.clock.objects_to_notify_weekday)
+        self.assertIn(self.dep.conditions[3], self.clock.objects_to_notify_time)
 
-    def test_parse_effect(self):
-
+    def test_parse_effect_good_data(self):
         self.assertEqual(self.dep._parse_effect('e3=20{0}'), (3, 20, 0))
 
+    def test_parse_effect_wrong_element_marker(self):
         with self.assertRaises(DependancyConfigError):
             self.dep._parse_effect('3=20{0}')
 
+    def test_parse_effect_negative_element_time(self):
         with self.assertRaises(DependancyConfigError):
             self.dep._parse_effect('e3=20{-5}')
-            print(DependancyConfigError.msg)
 
+    def test_parse_effect_negative_value(self):
         with self.assertRaises(DependancyConfigError):
             self.dep._parse_effect('e3=-20{0}')
-            print(DependancyConfigError.msg)
 
+    def test_parse_effect_no_element_id(self):
         with self.assertRaises(DependancyConfigError):
             self.dep._parse_effect('e=20{0}')
 
+    def test_parse_effect_value_is_char(self):
         with self.assertRaises(DependancyConfigError):
             self.dep._parse_effect('e=s{0}')
 
+    def test_parse_effect_empty_effect_string(self):
         with self.assertRaises(DependancyConfigError):
             self.dep._parse_effect('')
 
-    def test_parse_effects(self):
-
+    def test_parse_effects_all_efects_found(self):
+        # given
         element_dict = {3: Element(3, 1, '', 1, 1), 4: Element(4, 1, '', 1, 1)}
 
+        # when
         self.dep._parse_effects(output_elements=element_dict)
 
+        # then
         self.assertEqual(self.dep.num_of_effect, 3)
-
-        #effect_1, effect_2, effect_3 = self.dep.effects
-
-
-
-
-
-
