@@ -1,10 +1,7 @@
 import operator
-import time
 
+from backend.components.clock import Clock
 from backend.components.element import Element, OutputElement
-
-
-def get_millis(): return int(round(time.time() * 1000))
 
 
 class DependancyConfigError(Exception):
@@ -47,18 +44,20 @@ class Condition:
 
 class Effect:
 
+    clock = Clock()
+
     def __init__(self, _id, out_el, value, _time):
         self.id = _id
         self.output_element = out_el
         self.value = value
         self.prev_value = None
-        self.time = self.__parse_time(_time)
+        self.time = _time
         self.priority = 5
 
         self.done = True  # Should the effect be started. if not done it should be started
         self.cause_time = None  # Time when cause was True
 
-    def notify(self, milis):
+    def start(self, milis):
         """Api for notifing effect that couse changed to True and at what time"""
         self.cause_time = milis
         self.done = False
@@ -67,7 +66,7 @@ class Effect:
     def run(self, ):
         """Sets desired value of element if it was not set yet and if the time is right"""
         if not self.done:
-            if get_millis()-self.cause_time >= self.time:
+            if self.clock.get_millis()-self.cause_time >= self.time:
                 self.done = self.output_element.set_desired_value(self.value, self.priority, set_flag=True)
                 return True
         return False
@@ -75,18 +74,7 @@ class Effect:
     def revert(self):
         """Reverts effect. Sets output_element previous value"""
         if self.done:  # efect can be reverted only once when it is done
-            self.output_element.desired_value = (self.prev_value, self.priority, False)
-
-    @staticmethod
-    def __parse_time(_time):
-        """Parses effects time and converts it to miliseconds"""
-        if time == '':
-            return 0
-        else:
-            try:
-                return int(_time)*1000  # Conversion to ms
-            except:
-                raise DependancyConfigError("Could not convert time to int. Got {}".format(time))
+            self.output_element.desired_value = self.prev_value
 
     def __repr__(self,):
         return "El id: {} done: {}".format(self.el_id, self.done)
@@ -117,7 +105,7 @@ class Dependancy:
                 'fri': 4,
                 'sat': 5,
                 'sun': 6, }
-
+    clock = Clock()
     items = {}
 
     def __init__(self, _id, name, dep_str):
@@ -145,7 +133,7 @@ class Dependancy:
         
         if cause_result and not self.prev_cause_result:  # if the cause changes from False to True
             for effect in self.effects:
-                effect.notify(get_millis())
+                effect.start(self.clock.get_millis())
 
         # if the cause changes from True to False effects should be undone
         if not cause_result and self.prev_cause_result:
@@ -169,7 +157,7 @@ class Dependancy:
 
         return eval(eval_cause_string)
 
-    def _parse_cause(self, all_elements=dict(), clock=None):
+    def _parse_cause(self, all_elements=dict()):
         """Parses cause string"""
 
         for condition in self._find_condition():
@@ -187,12 +175,12 @@ class Dependancy:
             if element[0] == Dependancy.day_marker:
                 comp_value = comp_value.split(',')
                 comp_value = [Dependancy.day_dict[day] for day in comp_value]
-                subscribe = clock.subscribe_for_weekday
+                subscribe = self.clock.subscribe_for_weekday
 
             if element[0] == Dependancy.time_marker:
                 comp_value = comp_value.split(':')
                 comp_value = [int(val) for val in comp_value]
-                subscribe = clock.subscribe_for_minute
+                subscribe = self.clock.subscribe_for_minute
 
             condition = Condition(self.num_of_conds, op, comp_value)
             self.num_of_conds += 1
@@ -280,7 +268,7 @@ class Dependancy:
         try:
             element_id = int(effect_str[1:op_pos])
             set_value = int(effect_str[op_pos + 1:time_pos])
-            _time = int(effect_str[time_pos+1:-1])  # First and last char are flags of begining and end of time
+            _time = int(effect_str[time_pos+1:-1])*1000  # First and last char are flags of begining and end of time
         except:
             raise DependancyConfigError('Effect parsing error. Effect string: {}'.format(effect_str))
 
