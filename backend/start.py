@@ -1,28 +1,23 @@
-import time
-time.sleep(1)
 import threading
-import logging
-from backend.misc.check_host import is_RPI
-#import ptvsd
-#tcp://backend@localhost:8082
-#ptvsd.enable_attach(secret="backend", address = ('127.0.0.1', 8082))
+import time
 
-from backend.communication.communication import Communication_manager
-from backend.logic.logic import Logic_manager
-from backend.modbus.modbus_manager import Modbus_manager
-from backend.objects_loader import objects_loader
+from backend.managers.communication import CommunicationManager
+from backend.managers.logic import LogicManager
+from backend.managers.modbus import ModbusManager
 from backend.misc.color_logs import color_logs
+from backend.system_loader import system_loader
 
 #zabezpieczyc bufory przed kolizja watkow. Tzn logika usuwa bufor a w tym samym czasie komunikacja pisze do buforu
 
-import queue
+time.sleep(1)
+
 color_logs()
 
-objects_loader()
+system = system_loader()
 
-communication = Communication_manager()
-logic = Logic_manager(args=(communication.out_buffer, communication.in_buffer,))
-modbus_manager = Modbus_manager(args=(logic.tasks,))
+communication = CommunicationManager()
+logic = LogicManager(args=(communication.out_buffer, communication.in_buffer, system))
+modbus_manager = ModbusManager(args=(logic.tasks, system.modules.input))
 
 communication.logger.disabled = False
 communication.logger.setLevel("ERROR")
@@ -34,7 +29,7 @@ modbus_manager.modbus.logger.disabled = False
 modbus_manager.modbus.logger.setLevel("ERROR")
 
 logic.logger.disabled = False
-logic.logger.setLevel("ERROR")
+logic.logger.setLevel("DEBUG")
 
 communication.setDaemon(True)
 logic.setDaemon(True)
