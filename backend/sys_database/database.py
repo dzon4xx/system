@@ -9,50 +9,58 @@ from backend.misc.check_host import is_RPI
 
 
 def create_db_object():
-    root = sys.path[-1]
+
+    root = None
+    for path in sys.path:
+        if path.endswith("system"):
+            root = path
+
     if is_RPI:
-        db_path =  "/".join([root, 'backend', 'sys_database', "sys_database.db"])
+        db_path = "/".join([root, 'backend', 'sys_database', "sys_database.db"])
     else:   
-        db_path =  "\\".join([root, 'backend', 'sys_database', "sys_database.db"])
+        db_path = "\\".join([root, 'backend', 'sys_database', "sys_database.db"])
 
     return Database(db_path)
+
 
 def save_create(func):
     """Handles connection commit eventual rollback and closing while saving or creating to database"""
     @wraps(func)
-    def func_wrapper(*args, **kwargs):
-        if args[0].connect():
+    def func_wrapper(self, *args):
+        if self.connect():
             try:
-                args[0].cur = args[0].con.cursor()            
-                return func(*args, **kwargs)               
+                self.cur = self.con.cursor()
+                return func(self, *args)
             except sql.Error as e:
-                args[0].con.rollback()               
-                args[0].logger.exception( "DATABASE SAVE/CREATE Error %s:",  e.args[0])
+                self.con.rollback()
+                self.logger.exception("DATABASE SAVE/CREATE Error %s:",  e.args[0])
                 pass
             finally:
-                args[0].con.commit() 
-                args[0].close()
+                self.con.commit()
+                self.close()
         else:
             pass
     return func_wrapper
 
+
 def read_remove(func):
     """Handles connection and closing of database while reading or removing from database"""
     @wraps(func)
-    def func_wrapper(*args, **kwargs):
-        if args[0].connect():
+    def func_wrapper(self, *args):
+        if self.connect():
             try:
-                args[0].cur = args[0].con.cursor()
-                return func(*args, **kwargs)
+                self.cur = self.con.cursor()
+                return func(self, *args)
             except sql.Error as e:               
-                args[0].logger.exception( "DATABASE READ/REMOVE Error %s:", e.args[0])
+                self.logger.exception("DATABASE READ/REMOVE Error %s:", e.args[0])
 
             finally:
-                args[0].close()
+                self.close()
         else:
-            args[0].logger.warning("Cannot open database")
+            self.logger.warning("Cannot open database")
             return 0
     return func_wrapper
+
 
 class Database:
     """ Handles system database """
@@ -60,7 +68,7 @@ class Database:
         self.path = path
         self.logger = logging.getLogger('DB')
         self.logger.disabled = False
-        self.logger.setLevel(logging.WARN)
+        self.logger.setLevel(logging.ERROR)
 
         self.con = None
         self.cur = None
@@ -80,15 +88,10 @@ class Database:
 
     def connect(self):
         """Connects to database. If database does not exist creates one"""
-        try:           
-            self.con = sql.connect(self.path)
-            self.__connected = True
-            self.logger.debug("Database opened")
-        except sql.Error as e:
-            self.__connected = False
-            self.logger.warning(e.args[0])
-        finally:
-            return self.__connected
+        self.con = sql.connect(self.path)
+        self.__connected = True
+        self.logger.debug("Database opened")
+        return True
                      
     def close(self):
         """Closes connection to database"""
@@ -104,16 +107,16 @@ class Database:
         """For every Object in Objects if Object's table does not exists creates one """
 
         for Object in Objects:
-            #sprawdzenie czy tablica istnieje
+            # Check if the table exists
             self.cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='" + Object.table_name +"'")
             tables = self.cur.fetchall()
-            if not tables :
-                #Przygotowanie komendy sql
-                column_headers_and_types = [ ' '.join(col_header_and_type) for col_header_and_type in Object.column_headers_and_types]
+            if not tables:
+                # Prepare sql command
+                column_headers_and_types = [' '.join(col_header_and_type) for col_header_and_type in Object.column_headers_and_types]
                 column_headers_and_types_str = self._brackets(','.join(column_headers_and_types))
                 sql_command = self._put_spaces(self.sql_CREATE_TABLE, Object.table_name, column_headers_and_types_str)
 
-                self.cur.execute(sql_command);
+                self.cur.execute(sql_command)
                 self.logger.info("table: " + Object.table_name + " created")
 
     @read_remove
@@ -136,10 +139,10 @@ class Database:
             num_types = set()
 
             while types:
-                num_types.add(types.pop().value) # convert enums to ints
+                num_types.add(types.pop().value)  # convert enums to ints
 
             for data in table:
-                if data[1] in num_types: # if type of object match with requierd type
+                if data[1] in num_types:  # if type of object match with requierd type
                     data = list(data)
                     Object(*data)   # create Object
         except AttributeError: 
@@ -158,13 +161,13 @@ class Database:
     def save(self, Object, db_values):
         """Saves user to database"""
        
-        #Prepare column headers
+        # Prepare column headers
         column_headers = [ col_head_and_type[0] for col_head_and_type in Object.column_headers_and_types]
         column_headers_str = self._brackets (",".join(column_headers) )
         
-        #Przygotowanie question marks for sql query
+        # Przygotowanie question marks for sql query
         question_marks = ""
-        for col_head in Object.column_headers_and_types:
+        for _ in Object.column_headers_and_types:
             question_marks += '?,'   
         question_marks = self._brackets(question_marks.rstrip(','))
 
@@ -194,7 +197,7 @@ class Database:
         return object_data
     
     @save_create
-    #def update_user_log_status(self, user):
+    # def update_user_log_status(self, user):
     def update_field(self, object, field_name,  field_value):
         sql_command = self._put_spaces(self.sql_UPDATE, object.table_name, self.sql_SET, field_name, '=?', self.sql_WHERE, "id=?")
         self.cur.execute(sql_command, (field_value, object.id))
