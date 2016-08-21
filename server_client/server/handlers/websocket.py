@@ -1,10 +1,11 @@
 import logging
 from tornado.websocket import  WebSocketHandler
-from server__client.server.models.visual_element import Visual_element
+from server_client.server.models.visual_element import Visual_element
 
 socket_logger = logging.getLogger('WS')
 socket_logger.disabled = False
 socket_logger.setLevel("INFO")
+
 
 class Websocket(WebSocketHandler):
 
@@ -50,8 +51,6 @@ class Websocket(WebSocketHandler):
         if self == Websocket.logic:
             socket_logger.info("logic disconected")
             Websocket.logic = None
-
-
 
     def check_origin(self, origin):
         return True

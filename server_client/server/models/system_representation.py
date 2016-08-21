@@ -1,11 +1,11 @@
-from backend.sys_database.database import create_db_object
 import logging
-from server__client.server.models.room import Room
-from server__client.server.models.group import Group
-from server__client.server.models.visual_element import *
 
-from backend.misc.sys_types import rt, et
-from backend.components.relations.regulation import Regulation
+from backend.components.regulation import Regulation
+from backend.sys_database.database import create_db_object
+from server_client.server.models.group import Group
+from server_client.server.models.room import Room
+from server_client.server.models.visual_element import *
+
 
 def load_system_representation():
     db = create_db_object() #database object
@@ -50,9 +50,3 @@ def load_system_representation():
             else:
                 room.groups[group_type].elements.append(reg)
         logger.info("Loaded room: {}".format(room.id))
-    pass
-
-
-
-if __name__ == "__main__":
-    load_system_representation()

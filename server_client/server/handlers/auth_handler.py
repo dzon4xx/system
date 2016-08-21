@@ -2,7 +2,7 @@ import logging
 import json
 import tornado.web
 from ..models.user import User
-from backend.sys_database.database import Database, create_db_object
+from backend.sys_database.database import create_db_object
 
 paths = (r'auth/login_page.html',)
 

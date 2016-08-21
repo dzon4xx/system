@@ -1,25 +1,25 @@
-from backend.misc.sys_types import et, gt, regt
-from backend.components.base_component import Base_component
+from backend.misc.sys_types import Et, Gt, Regt
+from backend.components.base_component import BaseComponent
 
 from dominate.tags import div, br, b, ul, li, span
-class Group(Base_component):
+class Group(BaseComponent):
     """Groups aggregate visual elements"""
 
-    el_to_group_map = {et.blind : gt.blinds,
-                       et.dht_hum : gt.ventilation,   # pierwsza grupa jesli czujnik jesli wewnatrz. druga jesli na zewnatrz
-                       et.dht_temp: gt.heating,
-                       et.ds : gt.heating,
-                       et.heater : gt.heating,
-                       et.led : gt.lights,
-                       et.ls : gt.ambient,
-                       et.pir : gt.inputs,
-                       et.rs : gt.inputs,
-                       et.switch: gt.inputs,
-                       et.ventilator : gt.ventilation,
-                       regt.hum: gt.ventilation,
-                       regt.temp: gt.heating,}
+    el_to_group_map = {Et.blind : Gt.blinds,
+                       Et.dht_hum : Gt.ventilation,  # pierwsza grupa jesli czujnik jesli wewnatrz. druga jesli na zewnatrz
+                       Et.dht_temp: Gt.heating,
+                       Et.ds : Gt.heating,
+                       Et.heater : Gt.heating,
+                       Et.led : Gt.lights,
+                       Et.ls : Gt.ambient,
+                       Et.pir : Gt.inputs,
+                       Et.rs : Gt.inputs,
+                       Et.switch: Gt.inputs,
+                       Et.ventilator : Gt.ventilation,
+                       Regt.hum: Gt.ventilation,
+                       Regt.temp: Gt.heating,}
 
-    sensors = ( et.dht_hum, et.dht_temp, et.ds, et.ls)
+    sensors = (Et.dht_hum, Et.dht_temp, Et.ds, Et.ls)
 
  
 

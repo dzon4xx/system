@@ -1,5 +1,5 @@
-from backend.components.base_component import Base_component
-from backend.misc.sys_types import et, regt
+from backend.components.base_component import BaseComponent
+from backend.misc.sys_types import Et, Regt
 from dominate.tags import div, button, h4, span, b, p, input, label
 from functools import wraps
 
@@ -14,7 +14,7 @@ def field(func):
         return field
     return func_wrapper
 
-class Visual_element(Base_component):
+class Visual_element(BaseComponent):
 
     table_name = "elements"
 
@@ -22,21 +22,21 @@ class Visual_element(Base_component):
     def __init__(self, *args):
         Visual_element.items[args[0]] = self
         if args[0].startswith('r'): #jesli to regulacja. wtedy id jest stringiem i pierwsza litera to r
-            super().__init__(args[0], regt(args[1]), args[2]) # inicjalizuj id type, name
+            super().__init__(args[0], Regt(args[1]), args[2]) # inicjalizuj id type, name
         else:
-            super().__init__(args[0], et(args[1]), args[2]) # inicjalizuj id type, name
+            super().__init__(args[0], Et(args[1]), args[2]) # inicjalizuj id type, name
         self.value = 0
 
     def get_html(self,):
-        if self.type == et.blind:
+        if self.type == Et.blind:
             return self.blind()
-        elif self.type in (et.dht_hum, et.dht_temp, et.ds, et.ls):
+        elif self.type in (Et.dht_hum, Et.dht_temp, Et.ds, Et.ls):
             return self.value_field()
-        elif self.type in (regt.hum, regt.temp):
+        elif self.type in (Regt.hum, Regt.temp):
             return self.input_field()
-        elif self.type in (et.heater, et.pir, et.rs, et.switch):
+        elif self.type in (Et.heater, Et.pir, Et.rs, Et.switch):
             return self.state_field()
-        elif self.type==et.led:
+        elif self.type==Et.led:
             return self.slider()
         else:
             return self.value()
