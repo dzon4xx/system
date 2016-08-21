@@ -275,34 +275,45 @@ class WriteCoilsFunction(ModbusFunction):
         return out_bytes
 
 
-class Modbus:
+class ModbusNetwork:
     """Handles opening and closing of serial port.
        Gives API to modbus functions"""
-    def __init__(self, baudrate=38400,):
-        self.logger = logging.getLogger('MODBUS')
 
-        self.baudrate = baudrate
-        self.connected = False
-        self.port = ""
-        self.t_3_5 = 1e-3  # (1/baudrate)*9*3.5 # 9 bits per charater. 3.5 characters time sleep
-        self.sleep_timer = 0
-        self.correct_frames = 0
-        self.corrupted_frames = 0
-        self.consecutive_corrupted_frames = 0
+    _instance = None
+    _is_initialized = False
 
-        self.bench = Benchmark(self.logger.level)
-        self.bench.start()
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super().__new__(cls, *args, **kwargs)
+        return cls._instance
 
-        if is_RPI:
-            self.port = "/dev/ttyUSB0"
-        else:
-            self.port = "COM4"
+    def __init__(self):
+        if not ModbusNetwork._is_initialized:
+            ModbusNetwork._is_initialized = True
+            self.logger = logging.getLogger('MODBUS')
 
-        self.serial_port = None
+            self.baudrate = 38400
+            self.connected = False
+            self.port = ""
+            self.t_3_5 = 1e-3  # (1/baudrate)*9*3.5 # 9 bits per charater. 3.5 characters time sleep
+            self.sleep_timer = 0
+            self.correct_frames = 0
+            self.corrupted_frames = 0
+            self.consecutive_corrupted_frames = 0
 
-        self.read_regs_obj = ReadRegsFunction()
-        self.write_regs_obj = WriteRegsFunction()
-        self.write_coils_obj = WriteCoilsFunction()
+            self.bench = Benchmark(self.logger.level)
+            self.bench.start()
+
+            if is_RPI:
+                self.port = "/dev/ttyUSB0"
+            else:
+                self.port = "COM4"
+
+            self.serial_port = None
+
+            self.read_regs_obj = ReadRegsFunction()
+            self.write_regs_obj = WriteRegsFunction()
+            self.write_coils_obj = WriteCoilsFunction()
 
     def open(self):
         try:
@@ -377,15 +388,4 @@ class Modbus:
         if self.bench.loops_per_second():
             self.logger.debug("\nCorrect frames: {}\nCorrupted frames: {}".format(self.correct_frames,
                                                                                   self.corrupted_frames))
-
-
-if __name__ == "__main__":
-    from time import sleep
-    from backend.objects_loader import objects_loader
-    modbus = Modbus(baudrate=38400)
-    modbus.open()
-    objects_loader()
-
-    modbus.write_coils(2, 0, [1 for i in range(10)])
-    modbus.write_coils(2, 0, [0 for i in range(10)])
 
