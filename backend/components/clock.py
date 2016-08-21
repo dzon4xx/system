@@ -1,17 +1,31 @@
 import datetime
+import time
 
 
 class Clock:
     """Holds actual time. 
     Notifies about actual time
     Notifies about week day"""
-    def __init__(self, ):
-        self.objects_to_notify_weekday = set()
-        self.objects_to_notify_time = set()
 
-        self.now = None
-        self.minute = None
-        self.weekday = None
+    _is_initialized = False
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super().__new__(cls, *args, **kwargs)
+        return cls._instance
+
+    def __init__(self, ):
+        if not Clock._is_initialized:
+            Clock._is_initialized = True
+            self.objects_to_notify_weekday = set()
+            self.objects_to_notify_time = set()
+
+            self.now = None
+            self.minute = None
+            self.weekday = None
+
+            self.system_start = time.time()
 
     def subscribe_for_weekday(self, who):
         self.objects_to_notify_weekday.add(who)
@@ -39,4 +53,11 @@ class Clock:
         if self.weekday != self.now.weekday():
             self.notify_weekday()
 
-clock = None
+    def get_seconds(self):
+        return time.time() - self.system_start
+
+    def get_millis(self):
+        return (time.time() - self.system_start)*1000
+
+    def restart(self):
+        self.system_start = time.time()
